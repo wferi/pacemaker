@@ -1152,7 +1152,7 @@ AC_DEFINE_UNQUOTED(RH_STONITH_PREFIX,"$RH_STONITH_PREFIX", Prefix for Red Hat St
 AC_PATH_PROGS(GIT, git false)
 AC_MSG_CHECKING(build version)
 
-BUILD_VERSION=$Format:%h$
+BUILD_VERSION=6052cd1
 if test $BUILD_VERSION != ":%h$"; then
    AC_MSG_RESULT(archive hash: $BUILD_VERSION)
 
