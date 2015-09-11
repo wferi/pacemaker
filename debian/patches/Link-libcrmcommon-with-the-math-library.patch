@@ -1,0 +1,21 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sun, 13 Sep 2015 19:14:18 +0200
+Subject: Link libcrmcommon with the math library
+
+---
+ lib/common/Makefile.am |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/common/Makefile.am b/lib/common/Makefile.am
+index a593f40..1c60785 100644
+--- a/lib/common/Makefile.am
++++ b/lib/common/Makefile.am
+@@ -38,7 +38,7 @@ libcrmcommon_la_SOURCES	+= cib_secrets.c
+ endif
+ 
+ libcrmcommon_la_LDFLAGS	= -version-info 7:0:4
+-libcrmcommon_la_LIBADD  = @LIBADD_DL@ $(GNUTLSLIBS)
++libcrmcommon_la_LIBADD  = @LIBADD_DL@ $(GNUTLSLIBS) -lm
+ libcrmcommon_la_SOURCES += $(top_builddir)/lib/gnu/md5.c
+ 
+ clean-generic:

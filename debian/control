@@ -1,0 +1,389 @@
+Source: pacemaker
+Section: admin
+Priority: optional
+Maintainer: Debian HA Maintainers <debian-ha-maintainers@lists.alioth.debian.org>
+Uploaders: Martin Loschwitz <madkiss@debian.org>,
+ Anibal Monsalve Salazar <anibal@debian.org>,
+ Simon Horman <horms@debian.org>,
+ Frederik Schüler <fs@debian.org>,
+ Richard B Winters <rik@mmogp.com>,
+ Ferenc Wágner <wferi@niif.hu>
+Build-Depends: debhelper (>= 9),
+ dh-autoreconf,
+ cluster-glue-dev,
+ dh-systemd,
+ dctrl-tools,
+ asciidoc,
+ publican,
+ docbook-xsl,
+ doxygen,
+ graphviz,
+ help2man,
+ libbz2-dev,
+ libcfg-dev (>= 1.99),
+ libcmap-dev (>= 1.99),
+ libcpg-dev (>= 1.99),
+ libesmtp-dev,
+ libdbus-1-dev,
+ libglib2.0-dev,
+ libgnutls28-dev,
+ libltdl-dev,
+ libncurses5-dev,
+ libpam0g-dev,
+ libqb-dev (>= 0.17.1),
+ libquorum-dev (>= 1.99),
+# net-snmp-config --agent-libs contains -lsensors in sid on 2015-09-15
+ libsensors4-dev,
+ libsnmp-dev,
+ libsystemd-dev,
+ libxml2-dev,
+ libxml2-utils,
+ libxslt1-dev,
+ pkg-config,
+ uuid-dev,
+ xsltproc
+Standards-Version: 3.9.6
+Homepage: http://www.clusterlabs.org/
+Vcs-Git: https://alioth.debian.org/anonscm/git/debian-ha/pacemaker.git
+Vcs-Browser: http://anonscm.debian.org/cgit/debian-ha/pacemaker.git
+
+Package: pacemaker
+Architecture: any
+#Multi-Arch: foreign
+#Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends},
+ adduser,
+ cluster-glue (>= 1.0.12),
+ corosync (>= 1.99),
+# crmsh | pcs,
+Recommends: resource-agents, pacemaker-cli-utils
+Description: HA cluster resource manager
+ High-Availability cluster resource manager for Corosync.
+ .
+ Pacemaker supports a very sophisticated dependency model for 
+ n-node clusters and can respond to node and resource-level 
+ failures.
+ .
+ Since Corosync handles quorum all on its own, and is RHEL's
+ recommended stack, pacemaker supports the Corosync cluster
+ stack.
+
+Package: pacemaker-cli-utils
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Breaks: pacemaker (<< 1.1.9+git20130321-1)
+Replaces: pacemaker (<< 1.1.9+git20130321-1)
+Description: Command line interface utilities for Pacemaker
+ This package contains numerous command line utilities for the
+ Pacemaker cluster manager such as crm_mon and crm_attribute. If
+ you intend to run Pacemaker, you will definetely need them. If
+ you plan to run pacemaker-remote, these tools will come in very
+ handy, too.
+
+Package: pacemaker-remote
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends},
+Recommends: pacemaker-cli-utils,
+ resource-agents
+Description: Pacemaker add-on to control virtualized services
+ Pacemaker is a cluster resource manager that allows one to manage
+ cluster resources in a highly available manner. This version
+ of it called pacemaker-remote can be run within virtual machines
+ and allows their services to be controlled by the cluster-wide
+ pacemaker instance running. 
+ .
+ If you want to make services within your virtual machines highly
+ available without running a separate pacemaker cluster, you will
+ need this package.
+
+Package: pacemaker-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends: pacemaker (= ${binary:Version}),
+ ${misc:Depends}
+# FIXME add all library packages with exact binary versions
+Description: Debugging symbols for Pacemaker
+ High-Availability cluster resource manager for Corosync.
+ .
+ Pacemaker supports a very sophisticated dependency model for
+ n-node clusters and can respond to node and resource-level
+ failures.
+ .
+ Since Corosync handles quorum all on its own, and is RHEL's
+ recommended stack, pacemaker supports the Corosync cluster
+ stack.
+ .
+ This package contains the debugging symbols for Pacemaker.
+
+Package: pacemaker-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: Pacemaker API Documentation
+ High-Availability cluster resource manager for Corosync.
+ .
+ Pacemaker supports a very sophisticated dependency model for 
+ n-node clusters and can respond to node and resource-level 
+ failures.
+ .
+ Since Corosync handles quorum all on its own, and is RHEL's
+ recommended stack, pacemaker supports the Corosync cluster
+ stack.
+ .
+ This package contains the html Pacemaker API documentation.
+
+Package: libcib4
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - CIB 
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ CIB library.
+
+# FIXME include transitional numbered -dev packages?
+
+Package: libcib-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+ ${header:Depends},
+ libcib4 (= ${binary:Version})
+# util.h moved in
+Replaces: libcib3-dev
+Breaks: libcib3-dev
+Description: Development file for pacemaker's cib library
+ This package contains static libraries, symbol files as well as
+ headers provided by the pacemaker cluster manager (CIB). Install 
+ it if you want to do development based on pacemaker.
+
+Package: libcrmcluster4
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - CRM
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ CRM cluster library.
+
+Package: libcrmcluster-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+ ${header:Depends},
+ libcrmcluster4 (= ${binary:Version})
+# cib.h and other headers moved in
+Replaces: libcrmcluster1-dev,
+ libcrmcluster4-dev
+Breaks: libcrmcluster1-dev,
+ libcrmcluster4-dev
+Description: Development file for pacemaker's crm library
+ This package contains static libraries, symbol files as well as
+ headers provided by the pacemaker cluster manager (CRM). Install 
+ it if you want to do development based on pacemaker.
+
+Package: libcrmcommon3
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - common CRM
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ common CRM library.
+
+# FIXME: later - add in cluster-glue header dependencies
+Package: libcrmcommon-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+ ${header:Depends},
+ libcrmcommon3 (= ${binary:Version}),
+ libtransitioner2 (= ${binary:Version})
+# crm/common/ipc.h and other headers moved in
+Replaces: libcrmcommon2-dev,
+ libcrmcommon3-dev
+Breaks: libcrmcommon2-dev,
+ libcrmcommon3-dev
+Description: Development file for pacemaker's common library
+ This package contains static libraries, symbol files as well as
+ headers provided by the pacemaker cluster manager (common CRM). 
+ Install it if you want to do development based on pacemaker.
+
+Package: libcrmservice3
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - crmservice
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ crmservice library.
+
+Package: libcrmservice-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+ ${header:Depends},
+ libcrmservice3 (= ${binary:Version})
+Description: Development file for pacemaker's crmservice library
+ This package contains static libraries, symbol files as well as
+ headers provided by the pacemaker cluster manager (crmservice).
+ Install it if you want to do development based on pacemaker.
+
+Package: liblrmd1
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - lrmd
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ lrmd library.
+
+Package: liblrmd-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+ ${header:Depends},
+ liblrmd1 (= ${binary:Version})
+# lrmd.h moved in
+Breaks: liblrmd1-dev
+Replaces: liblrmd1-dev
+Description: Development file for pacemaker's lrmd library
+ This package contains static libraries, symbol files as well as
+ headers provided by the pacemaker cluster manager (lrmd).
+ Install it if you want to do development based on pacemaker.
+
+Package: libpe-rules2
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - rules for P-Engine
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ PEngine rules library.
+
+Package: libpe-status4
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - status for P-Engine
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ PEngine status library.
+
+Package: libpengine4
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - P-Engine
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ PEngine library.
+
+Package: libpengine-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+ ${header:Depends},
+ libpengine4 (= ${binary:Version}),
+ libpe-rules2 (= ${binary:Version}),
+ libpe-status4 (= ${binary:Version})
+# crm/pengine/*.h moved in
+Replaces: libpengine3-dev,
+ libpengine4-dev
+Breaks: libpengine3-dev,
+ libpengine4-dev
+Description: Development file for pacemaker's pengine library
+ This package contains static libraries, symbol files as well as
+ headers provided by the pacemaker cluster manager (pengine). 
+ Install it if you want to do development based on pacemaker.
+
+Package: libstonithd2
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - stonith
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ stonith library.
+
+Package: libstonithd-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+ ${header:Depends},
+ libstonithd2 (= ${binary:Version})
+Description: Development file for pacemaker's stonith library
+ This package contains static libraries, symbol files as well as
+ headers provided by the pacemaker cluster manager (stonith). 
+ Install it if you want to do development based on pacemaker.
+
+Package: libtransitioner2
+Architecture: any
+Multi-Arch: same
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends},
+ ${misc:Depends}
+Description: Pacemaker libraries - transitioner
+ This package contains some of the libraries provided by and needed
+ for the pacemaker cluster manager. You need to install them if you
+ intend to run pacemaker. Specifically, this package contains the
+ transitioner library.
+
+# FIXME make libtransitioner1-dev transitional to libcrmcommon-dev?
+# FIXME make libpe-rules?-dev transitional to libpengine-dev
+# FIXME make libpe-status?-dev transitional to libpengine-dev

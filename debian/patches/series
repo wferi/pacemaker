@@ -1,0 +1,9 @@
+Link-libcrmcommon-with-the-math-library.patch
+libpengine.la-needs-additional-libraries-during-link.patch
+Adjust-version-number-to-1.1.13.patch
+Debianize-crm_mon.service.patch
+Debianize-pacemaker_remote.service.patch
+Synchronize-the-provided-name-with-the-filename.patch
+Substitute-additional-configure-macros-used-in-pkg-c.patch
+Fix-typo-invokation-invocation.patch
+Add-description-to-the-pacemaker_remote-RA-for-prope.patch

@@ -1,0 +1,6 @@
+etc/init.d/pacemaker_remote
+lib/systemd/system/pacemaker_remote.service
+usr/share/man/man7/ocf_pacemaker_remote.7
+usr/share/man/man8/pacemaker_remoted.8
+usr/sbin/pacemaker_remoted
+usr/lib/ocf/resource.d/pacemaker/remote

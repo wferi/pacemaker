@@ -1,0 +1,21 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sun, 13 Sep 2015 19:37:53 +0200
+Subject: Fix typo: invokation -> invocation
+
+---
+ lib/services/services_linux.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/services/services_linux.c b/lib/services/services_linux.c
+index 8c20d2e..a823976 100644
+--- a/lib/services/services_linux.c
++++ b/lib/services/services_linux.c
+@@ -220,7 +220,7 @@ recurring_action_timer(gpointer data)
+ {
+     svc_action_t *op = data;
+ 
+-    crm_debug("Scheduling another invokation of %s", op->id);
++    crm_debug("Scheduling another invocation of %s", op->id);
+ 
+     /* Clean out the old result */
+     free(op->stdout_data);

@@ -1,0 +1,68 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: pacemaker
+Source: http://github.com/clusterlabs/pacemaker
+
+Files: *
+Copyright: 1998-2015 Andrew Beekhof <andrew[at]beekhof[dot]net>
+    	             David Vossel <dvossel[at]redhat[dot]com>	
+    	             Keisuke MORI <keisuke[dot]mori[at]gmail[dot]com>
+    	             Yan Gao <ygao[at]suse[dot]com>
+    	             Dan Frîncu <df[dot]cluster[at]gmail[dot]com>
+    	             Raoul Scarazzini <rasca[at]miamammausalinux[dot]org>
+    	             Charlie Chen
+    	             Lars Marowsky-Brée <lmb[at]suse[dot]de>
+    	             Dominik Klein <dk@in-telegence.net>
+    	             Dejan Muhamedagic <dejan[at]suse[dot]de>
+    	             Alan Robertson <alanr@unix.sh>
+    	             Tanja Roth <taroth[at]suse[dot]com>
+    	             Thomas Schraitle <toms[at]suse[dot]com>
+License: GPL-2+ and LGPL-2+
+
+Files: debian/*
+Copyright: 1999-2015 Debian-HA-Maintainers <debian-ha-maintainers@lists.alioth.debian.org>
+                     Paolo Molaro <lupus@debian.org>
+                     Martin Loschwitz <madkiss@debian.org>
+                     Luk Claes <luk@debian.org>
+                     Simon Horman <horms@debian.org>
+                     Frederik Schüler <fs@debian.org>
+                     Anibal Monsalve Salazar <anibal@debian.org>
+                     Andrew Beekhof <abeekhof@suse.de>
+                     Richard B Winters <rik@mmogp.com>
+License: GPL-2+
+
+License: GPL-2+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this package; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-2'.
+
+License: LGPL-2+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Library General Public
+ License as published by the Free Software Foundation; either
+ version 2 of the License, or (at your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Library General Public License for more details.
+ .
+ You should have received a copy of the GNU Library General Public
+ License along with this library; if not, write to the
+ Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+ Boston, MA 02110-1301, USA.
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License can be found in `/usr/share/common-licenses/LGPL-2.1'.

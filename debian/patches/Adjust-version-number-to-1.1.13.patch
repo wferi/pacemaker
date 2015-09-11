@@ -1,0 +1,15 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sun, 13 Sep 2015 19:14:18 +0200
+Subject: Adjust version number to 1.1.13
+
+---
+ version.m4 |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/version.m4 b/version.m4
+index 22faf65..3d5e96b 100644
+--- a/version.m4
++++ b/version.m4
+@@ -1 +1 @@
+-m4_define([VERSION_NUMBER], [1.1.12])
++m4_define([VERSION_NUMBER], [1.1.13])

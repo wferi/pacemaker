@@ -1,0 +1,3 @@
+usr/lib/*/liblrmd.so
+usr/include/pacemaker/crm/lrmd.h
+usr/lib/*/pkgconfig/pacemaker-lrmd.pc
