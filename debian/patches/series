@@ -7,3 +7,4 @@ Synchronize-the-provided-name-with-the-filename.patch
 Substitute-additional-configure-macros-used-in-pkg-c.patch
 Fix-typo-invokation-invocation.patch
 Add-description-to-the-pacemaker_remote-RA-for-prope.patch
+Library-options-go-into-Libs-not-Cflags.patch
