@@ -1,0 +1,54 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sun, 13 Sep 2015 20:45:25 +0200
+Subject: Fix typo: initalize -> initialize
+
+---
+ crmd/lrm.c      |    4 ++--
+ lib/ais/utils.c |    2 +-
+ mcp/pacemaker.c |    2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/crmd/lrm.c b/crmd/lrm.c
+index f374389..c632907 100644
+--- a/crmd/lrm.c
++++ b/crmd/lrm.c
+@@ -2070,11 +2070,11 @@ do_update_resource(lrm_state_t * lrm_state, lrmd_rsc_info_t * rsc, lrmd_event_da
+             const char *remote_node = g_hash_table_lookup(op->params, CRM_META"_remote_node");
+ 
+             if (remote_node) {
+-                /* A container for a remote-node has started, initalize remote-node's status */
++                /* A container for a remote-node has started, initialize remote-node's status */
+                 crm_info("Initalizing lrm status for container remote-node %s. Container successfully started.", remote_node);
+                 remote_node_clear_status(remote_node, call_opt);
+             } else if (container == FALSE && safe_str_eq(rsc->type, "remote") && safe_str_eq(rsc->provider, "pacemaker")) {
+-                /* baremetal remote node connection resource has started, initalize remote-node's status */
++                /* baremetal remote node connection resource has started, initialize remote-node's status */
+                 crm_info("Initializing lrm status for baremetal remote-node %s", rsc->id);
+                 remote_node_clear_status(rsc->id, call_opt);
+             }
+diff --git a/lib/ais/utils.c b/lib/ais/utils.c
+index 94a2505..c72b07d 100644
+--- a/lib/ais/utils.c
++++ b/lib/ais/utils.c
+@@ -206,7 +206,7 @@ spawn_child(crm_child_t * child)
+         opts_default[0] = ais_strdup(child->command);;
+ 
+         if (uid && initgroups(child->uid, gid) < 0) {
+-            ais_perror("Cannot initalize groups for %s", child->uid);
++            ais_perror("Cannot initialize groups for %s", child->uid);
+         }
+ 
+         if (uid && setuid(uid) < 0) {
+diff --git a/mcp/pacemaker.c b/mcp/pacemaker.c
+index 033bc3c..2285a97 100644
+--- a/mcp/pacemaker.c
++++ b/mcp/pacemaker.c
+@@ -324,7 +324,7 @@ start_child(pcmk_child_t * child)
+ 
+                 /* Keep the root group (so we can access corosync), but add the haclient group (so we can access ipc) */
+             } else if (initgroups(child->uid, gid) < 0) {
+-                crm_err("Cannot initalize groups for %s: %s (%d)", child->uid, pcmk_strerror(errno), errno);
++                crm_err("Cannot initialize groups for %s: %s (%d)", child->uid, pcmk_strerror(errno), errno);
+             }
+         }
+ 

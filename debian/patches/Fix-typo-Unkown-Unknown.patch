@@ -1,0 +1,21 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sun, 13 Sep 2015 20:46:05 +0200
+Subject: Fix typo: Unkown -> Unknown
+
+---
+ fencing/commands.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fencing/commands.c b/fencing/commands.c
+index b592ae6..22bb50f 100644
+--- a/fencing/commands.c
++++ b/fencing/commands.c
+@@ -864,7 +864,7 @@ status_search_cb(GPid pid, int rc, const char *output, gpointer user_data)
+         can = TRUE;
+ 
+     } else {
+-        crm_notice("Unkown result when testing if %s can fence %s: rc=%d", dev->id, search->host,
++        crm_notice("Unknown result when testing if %s can fence %s: rc=%d", dev->id, search->host,
+                    rc);
+     }
+     search_devices_record_result(search, dev->id, can);

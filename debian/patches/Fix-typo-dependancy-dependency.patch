@@ -1,0 +1,125 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sun, 13 Sep 2015 20:39:51 +0200
+Subject: Fix typo: dependancy -> dependency
+
+---
+ include/crm/pengine/internal.h |    2 +-
+ lib/pengine/utils.c            |   10 +++++-----
+ lib/transition/utils.c         |    4 ++--
+ pengine/graph.c                |    6 +++---
+ pengine/regression.sh          |    2 +-
+ 5 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/include/crm/pengine/internal.h b/include/crm/pengine/internal.h
+index 52dcf7a..40663cd 100644
+--- a/include/crm/pengine/internal.h
++++ b/include/crm/pengine/internal.h
+@@ -264,7 +264,7 @@ op_digest_cache_t *rsc_action_digest_cmp(resource_t * rsc, xmlNode * xml_op, nod
+ 
+ action_t *pe_fence_op(node_t * node, const char *op, bool optional, pe_working_set_t * data_set);
+ void trigger_unfencing(
+-    resource_t * rsc, node_t *node, const char *reason, action_t *dependancy, pe_working_set_t * data_set);
++    resource_t * rsc, node_t *node, const char *reason, action_t *dependency, pe_working_set_t * data_set);
+ 
+ void set_bit_recursive(resource_t * rsc, unsigned long long flag);
+ void clear_bit_recursive(resource_t * rsc, unsigned long long flag);
+diff --git a/lib/pengine/utils.c b/lib/pengine/utils.c
+index 6bed2cc..f5789b6 100644
+--- a/lib/pengine/utils.c
++++ b/lib/pengine/utils.c
+@@ -1770,7 +1770,7 @@ order_actions(action_t * lh_action, action_t * rh_action, enum pe_ordering order
+ 
+     crm_trace("Ordering Action %s before %s", lh_action->uuid, rh_action->uuid);
+ 
+-    /* Ensure we never create a dependancy on ourselves... its happened */
++    /* Ensure we never create a dependency on ourselves... its happened */
+     CRM_ASSERT(lh_action != rh_action);
+ 
+     /* Filter dups, otherwise update_action_states() has too much work to do */
+@@ -2096,7 +2096,7 @@ pe_fence_op(node_t * node, const char *op, bool optional, pe_working_set_t * dat
+ 
+ void
+ trigger_unfencing(
+-    resource_t * rsc, node_t *node, const char *reason, action_t *dependancy, pe_working_set_t * data_set) 
++    resource_t * rsc, node_t *node, const char *reason, action_t *dependency, pe_working_set_t * data_set) 
+ {
+     if(is_not_set(data_set->flags, pe_flag_enable_unfencing)) {
+         /* No resources require it */
+@@ -2113,8 +2113,8 @@ trigger_unfencing(
+         action_t *unfence = pe_fence_op(node, "on", FALSE, data_set);
+ 
+         crm_notice("Unfencing %s: %s", node->details->uname, reason);
+-        if(dependancy) {
+-            order_actions(unfence, dependancy, pe_order_optional);
++        if(dependency) {
++            order_actions(unfence, dependency, pe_order_optional);
+         }
+ 
+     } else if(rsc) {
+@@ -2123,7 +2123,7 @@ trigger_unfencing(
+         g_hash_table_iter_init(&iter, rsc->allowed_nodes);
+         while (g_hash_table_iter_next(&iter, NULL, (void **)&node)) {
+             if(node->details->online && node->details->unclean == FALSE && node->details->shutdown == FALSE) {
+-                trigger_unfencing(rsc, node, reason, dependancy, data_set);
++                trigger_unfencing(rsc, node, reason, dependency, data_set);
+             }
+         }
+     }
+diff --git a/lib/transition/utils.c b/lib/transition/utils.c
+index 5ea492a..30a1007 100644
+--- a/lib/transition/utils.c
++++ b/lib/transition/utils.c
+@@ -200,10 +200,10 @@ print_synapse(unsigned int log_level, crm_graph_t * graph, synapse_t * synapse)
+ 
+             if (find_action(graph, input->id) == NULL) {
+                 if (host == NULL) {
+-                    do_crm_log(log_level, " * [Input %2d]: Unresolved dependancy %s op %s",
++                    do_crm_log(log_level, " * [Input %2d]: Unresolved dependency %s op %s",
+                                input->id, actiontype2text(input->type), key);
+                 } else {
+-                    do_crm_log(log_level, " * [Input %2d]: Unresolved dependancy %s op %s on %s",
++                    do_crm_log(log_level, " * [Input %2d]: Unresolved dependency %s op %s on %s",
+                                input->id, actiontype2text(input->type), key, host);
+                 }
+             }
+diff --git a/pengine/graph.c b/pengine/graph.c
+index 35ed05e..197fa7f 100644
+--- a/pengine/graph.c
++++ b/pengine/graph.c
+@@ -548,7 +548,7 @@ update_action(action_t * then)
+             changed |= graph_update_action(first, then, node, first_flags, otype);
+ 
+             /* 'first' was for a complex resource (clone, group, etc),
+-             * create a new dependancy if necessary
++             * create a new dependency if necessary
+              */
+         } else if (order_actions(first, then, other->type)) {
+             /* This was the first time 'first' and 'then' were associated,
+@@ -972,12 +972,12 @@ should_dump_action(action_t * action)
+             } else if (safe_str_neq(wrapper->action->task, RSC_START)) {
+                 /* Only interested in start operations */
+             } else if (is_set(wrapper->action->flags, pe_action_dumped)) {
+-                crm_trace("action %d (%s) dependancy of %s",
++                crm_trace("action %d (%s) dependency of %s",
+                           action->id, action->uuid, wrapper->action->uuid);
+                 return TRUE;
+ 
+             } else if (should_dump_action(wrapper->action)) {
+-                crm_trace("action %d (%s) dependancy of %s",
++                crm_trace("action %d (%s) dependency of %s",
+                           action->id, action->uuid, wrapper->action->uuid);
+                 return TRUE;
+             }
+diff --git a/pengine/regression.sh b/pengine/regression.sh
+index 7b287d0..a5e3ffa 100755
+--- a/pengine/regression.sh
++++ b/pengine/regression.sh
+@@ -438,7 +438,7 @@ do_test interleave-2 "coloc - interleaved   "
+ do_test interleave-3 "coloc - interleaved (2)"
+ do_test interleave-pseudo-stop "Interleaved clone during stonith"
+ do_test interleave-stop "Interleaved clone during stop"
+-do_test interleave-restart "Interleaved clone during dependancy restart"
++do_test interleave-restart "Interleaved clone during dependency restart"
+ 
+ echo ""
+ do_test notify-0 "Notify reference"
