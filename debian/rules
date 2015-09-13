@@ -83,5 +83,10 @@ override_dh_install:
 override_dh_installchangelogs:
 	dh_installchangelogs ChangeLog
 
+# Upstream ships the init files, so we have to force these
+override_dh_installinit:
+	dh_installinit --onlyscripts -p pacemaker
+	dh_installinit --onlyscripts --name=pacemaker_remote -p pacemaker-remote
+
 override_dh_strip:
 	dh_strip --dbg-package=pacemaker-dbg
