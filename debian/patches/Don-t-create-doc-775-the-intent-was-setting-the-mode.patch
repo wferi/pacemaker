@@ -1,0 +1,21 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Mon, 14 Sep 2015 10:30:15 +0200
+Subject: Don't create doc/775, the intent was setting the mode
+
+---
+ doc/Makefile.am |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/doc/Makefile.am b/doc/Makefile.am
+index ec22a02..9de5c3a 100644
+--- a/doc/Makefile.am
++++ b/doc/Makefile.am
+@@ -136,7 +136,7 @@ install-data-local: all-local
+ 	    for f in $$filelist; do							\
+ 		p=`echo $$f | sed s:publish/:: | sed s:Pacemaker/::`;			\
+ 		if [ -d $$f ]; then							\
+-			$(INSTALL) -d 775 $(DESTDIR)$(docdir)/$$p;			\
++			$(INSTALL) -d -m 775 $(DESTDIR)$(docdir)/$$p;			\
+ 		else									\
+ 			$(INSTALL) -m 644 $$f $(DESTDIR)$(docdir)/$$p;			\
+ 		fi									\
