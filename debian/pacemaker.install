@@ -19,7 +19,11 @@ usr/sbin/fence_legacy
 usr/sbin/fence_pcmk
 usr/sbin/pacemakerd
 usr/sbin/stonith_admin
-usr/share/doc/pacemaker
+usr/share/doc/pacemaker/AUTHORS
+usr/share/doc/pacemaker/acls.html
+usr/share/doc/pacemaker/acls.txt
+usr/share/doc/pacemaker/crm_fencing.html
+usr/share/doc/pacemaker/crm_fencing.txt
 usr/share/man/man7/crmd.7
 usr/share/man/man7/ocf_pacemaker_ClusterMon.7
 usr/share/man/man7/ocf_pacemaker_controld.7
