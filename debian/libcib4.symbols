@@ -1,4 +1,5 @@
 libcib.so.4 libcib4 #MINVER#
+* Build-Depends-Package: libcib-dev
  __start___verbose@Base 1.1.12
  __stop___verbose@Base 1.1.12
  anon_cred_c@Base 1.1.12

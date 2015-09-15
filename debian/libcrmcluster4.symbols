@@ -1,4 +1,5 @@
 libcrmcluster.so.4 libcrmcluster4 #MINVER#
+* Build-Depends-Package: libcrmcluster-dev
  __start___verbose@Base 1.1.10
  __stop___verbose@Base 1.1.10
  ais_membership_force@Base 1.1.10

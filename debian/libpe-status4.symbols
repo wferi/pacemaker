@@ -1,4 +1,5 @@
 libpe_status.so.4 libpe-status4 #MINVER#
+* Build-Depends-Package: libpengine-dev
  __start___verbose@Base 1.1.9
  __stop___verbose@Base 1.1.9
  add_hash_param@Base 1.1.9

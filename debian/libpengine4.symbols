@@ -1,4 +1,5 @@
 libpengine.so.4 libpengine4 #MINVER#
+* Build-Depends-Package: libpengine-dev
  DeleteRsc@Base 1.1.9
  DemoteRsc@Base 1.1.9
  LogActions@Base 1.1.9

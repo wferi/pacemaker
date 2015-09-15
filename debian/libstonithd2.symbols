@@ -1,4 +1,5 @@
 libstonithd.so.2 libstonithd2 #MINVER#
+* Build-Depends-Package: libstonithd-dev
  __start___verbose@Base 1.1.9
  __stop___verbose@Base 1.1.9
  create_device_registration_xml@Base 1.1.9

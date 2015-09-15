@@ -1,4 +1,5 @@
 libcrmservice.so.3 libcrmservice3 #MINVER#
+* Build-Depends-Package: libcrmservice-dev
  __start___verbose@Base 1.1.13
  __stop___verbose@Base 1.1.13
  cancel_recurring_action@Base 1.1.13

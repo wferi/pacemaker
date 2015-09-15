@@ -1,4 +1,5 @@
 libtransitioner.so.2 libtransitioner2 #MINVER#
+* Build-Depends-Package: libcrmcommon-dev
  __start___verbose@Base 1.1.9
  __stop___verbose@Base 1.1.9
  actiontype2text@Base 1.1.9

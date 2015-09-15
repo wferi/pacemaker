@@ -1,4 +1,5 @@
 liblrmd.so.1 liblrmd1 #MINVER#
+* Build-Depends-Package: liblrmd-dev
  __start___verbose@Base 1.1.9
  __stop___verbose@Base 1.1.9
  lrmd@Base 1.1.9

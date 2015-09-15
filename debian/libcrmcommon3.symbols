@@ -1,4 +1,5 @@
 libcrmcommon.so.3 libcrmcommon3 #MINVER#
+* Build-Depends-Package: libcrmcommon-dev
  __start___verbose@Base 1.1.9
  __stop___verbose@Base 1.1.9
  __xml_acl_to_text@Base 1.1.12
