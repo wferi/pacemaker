@@ -40,6 +40,7 @@ libpengine.so.4 libpengine4 #MINVER#
  filter_colocation_constraint@Base 1.1.13
  find_compatible_child@Base 1.1.9
  free_notification_data@Base 1.1.9
+# see comment on https://github.com/ClusterLabs/pacemaker/commit/a73aa26
 #MISSING: 1.1.13-1# generate_location_rule@Base 1.1.9
  get_asymmetrical_flags@Base 1.1.9
  get_flags@Base 1.1.9
