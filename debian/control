@@ -104,9 +104,20 @@ Package: pacemaker-dbg
 Architecture: any
 Section: debug
 Priority: extra
-Depends: pacemaker (= ${binary:Version}),
- ${misc:Depends}
-# FIXME add all library packages with exact binary versions
+Depends: ${misc:Depends},
+ libcib4 (= ${binary:Version}),
+ libcrmcluster4 (= ${binary:Version}),
+ libcrmcommon3 (= ${binary:Version}),
+ libcrmservice3 (= ${binary:Version}),
+ liblrmd1 (= ${binary:Version}),
+ libpe-rules2 (= ${binary:Version}),
+ libpe-status4 (= ${binary:Version}),
+ libpengine4 (= ${binary:Version}),
+ libstonithd2 (= ${binary:Version}),
+ libtransitioner2 (= ${binary:Version}),
+ pacemaker (= ${binary:Version}),
+ pacemaker-cli-utils (= ${binary:Version}),
+ pacemaker-remote (= ${binary:Version})
 Description: Debugging symbols for Pacemaker
  High-Availability cluster resource manager for Corosync.
  .
