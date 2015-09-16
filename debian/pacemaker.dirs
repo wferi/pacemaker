@@ -1,0 +1,3 @@
+var/lib/pacemaker/pengine
+var/lib/pacemaker/cib
+var/lib/pacemaker/blackbox
