@@ -1,4 +1,3 @@
-lib/systemd/system/crm_mon.service
 usr/sbin/crm_simulate
 usr/sbin/iso8601
 usr/sbin/crm_attribute
