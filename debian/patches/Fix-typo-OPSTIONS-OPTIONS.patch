@@ -1,0 +1,18 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Thu, 17 Sep 2015 15:59:08 +0200
+Subject: Fix typo: OPSTIONS -> OPTIONS
+
+---
+ tools/crm_mon.sysconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/crm_mon.sysconfig b/tools/crm_mon.sysconfig
+index bd4e5bd..ea4d6f9 100644
+--- a/tools/crm_mon.sysconfig
++++ b/tools/crm_mon.sysconfig
+@@ -4,4 +4,4 @@
+ #
+ # Please refer to a help and a manual for the detailed option.
+ #
+-#OPSTIONS="-d"
++#OPTIONS="-d"
