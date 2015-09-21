@@ -72,7 +72,10 @@ Description: HA cluster resource manager
 Package: pacemaker-cli-utils
 Architecture: any
 Depends: ${shlibs:Depends},
- ${misc:Depends}
+ ${misc:Depends},
+ init-system-helpers (>= 1.23)
+# ... because << 1.23 starts our disabled crm_mon service on install and
+# upgrade, see #768456.
 Breaks: pacemaker (<< 1.1.9+git20130321-1)
 Replaces: pacemaker (<< 1.1.9+git20130321-1)
 Description: Command line interface utilities for Pacemaker
