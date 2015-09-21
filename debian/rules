@@ -22,25 +22,6 @@ override_dh_auto_configure:
 	dh_auto_configure -- --disable-fatal-warnings \
 	    --disable-static \
 	    --libdir=/usr/lib/$(DEB_HOST_MULTIARCH)
-# --disable-fatal-warnings avoids this:
-#(sid-amd64-sbuild)wferi@cedar:/build/pacemaker-ZGfxLy/pacemaker-1.1.13/lib/common$ gcc -DHAVE_CONFIG_H -I. -I../../include -I../../include -I../../include -I../../libltdl -I../../libltdl -I../../lib/gnu -I../../lib/gnu -D_FORTIFY_SOURCE=2 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/libxml2 -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -I/usr/include/heartbeat -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -ggdb -fgnu89-inline -Wall -Waggregate-return -Wbad-function-cast -Wcast-align -Wdeclaration-after-statement -Wendif-labels -Wfloat-equal -Wformat=2 -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-long-long -Wno-strict-aliasing -Wpointer-arith -Wwrite-strings -Wunused-but-set-variable -fstack-protector-all -Werror -fPIC -c xml.c -fPIE -o xml.o
-#xml.c: In function 'xml_latest_schema':
-#xml.c:5963:1: error: assuming signed overflow does not occur when assuming that (X - c) > X is always false [-Werror=strict-overflow]
-# }
-# ^
-#xml.c:5509:21: error: assuming signed overflow does not occur when assuming that (X - c) > X is always false [-Werror=strict-overflow]
-#     if (version < 0 || version >= xml_schema_max) {
-#                     ^
-#cc1: all warnings being treated as errors
-
-#	    --enable-glib-malloc \
-#	    --enable-snmp-subagent \
-#	    --with-mibsdir=/usr/share/snmp/mibs \
-#	    --with-doc-cli=crmsh
-#	    --thread-safe
-#	    --enable-glib-malloc
-
-DOC = debian/tmp/usr/share/doc/pacemaker
 
 override_dh_auto_build:
 	dh_auto_build
@@ -49,26 +30,6 @@ override_dh_auto_build:
 # make check does not check the compiled software, but rebuilds everything
 # with clang.  This takes a lot of time and does not help us at all.  Skip.
 override_dh_auto_test:
-#scan-build: 10 bugs found.
-#scan-build: Run 'scan-view /tmp/scan-build-2015-09-10-111227-19904-1' to examine bug reports.
-#for d in  replace lib mcp attrd pengine cib crmd fencing lrmd tools; do cppcheck -q $d; done
-#[replace/scandir.c:159]: (error) Memory leak: array
-#[replace/scandir.c:194]: (error) Memory leak: copy
-#(information) Too many #ifdef configurations - cppcheck only checks 12 configurations. Use --force to check all configurations. For more details, use --enable=information.
-#[lib/common/cib_secrets.c:86]: (error) Resource leak: fp
-#[lib/common/cib_secrets.c:93]: (error) Resource leak: fp
-#[lib/common/io.c:54]: (error) Memory leak: path
-#[lib/common/iso8601.c:760]: (error) Return value of allocation function 'crm_time_parse' is not stored.
-#[lib/common/utils.c:834]: (error) Memory leak: mutable_key
-#[lib/common/xml.c:4119]: (error) Uninitialized struct member: p.flags
-#[lib/common/xml.c:4123]: (error) Uninitialized struct member: p.flags
-#[lib/fencing/st_client.c:1082]: (error) va_list 'ap' was opened but not closed by va_end().
-#[lib/lrmd/lrmd_client.c:1675]: (error) Read and write operations without a call to a positioning function (fseek, fsetpos or rewind) or fflush in between result in undefined behaviour.
-#[lib/lrmd/lrmd_client.c:1730]: (error) Memory leak: metadata_file
-#[lib/services/dbus.c:315]: (error) Return value of allocation function 'pcmk_dbus_lookup_result' is not stored.
-#[lib/transition/unpack.c:108]: (error) Memory leak: new_synapse
-#[crmd/pengine.c:69]: (error) Memory leak: filename
-#[tools/ipmiservicelogd.c:439]: (error) Uninitialized variable: sensor_lun
 
 override_dh_install:
 	rm -r	debian/tmp/usr/share/pacemaker/tests \
