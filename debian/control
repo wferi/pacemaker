@@ -54,7 +54,8 @@ Depends: ${shlibs:Depends},
  ${misc:Depends},
  adduser,
  corosync (>= 1.99)
-Recommends: pacemaker-cli-utils,
+Recommends: fence-agents,
+ pacemaker-cli-utils,
  resource-agents
 Suggests: cluster-glue,
  crmsh | pcs
