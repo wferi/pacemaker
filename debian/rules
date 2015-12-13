@@ -8,6 +8,9 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # Not upstreamed, see https://github.com/ClusterLabs/pacemaker/pull/800
 export DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs
 
+# Avoid useless dependencies in the utilities
+export DEB_LDFLAGS_MAINT_APPEND+=-Wl,--as-needed
+
 # Below we specify --libdir without ${prefix} to stop configure "sanitizing"
 # it to /usr/lib.  This is a workaround for an upstream bug.
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
@@ -15,8 +18,10 @@ DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 %:
 	dh $@ --with autoreconf,systemd
 
+# autoreconf options taken from autogen.sh
+# without symlink usage (-s) to make --as-needed effective
 override_dh_autoreconf:
-	dh_autoreconf ./autogen.sh
+	dh_autoreconf --as-needed autoreconf -- -vif -Wno-portability
 
 override_dh_auto_configure:
 	dh_auto_configure -- --disable-fatal-warnings \
