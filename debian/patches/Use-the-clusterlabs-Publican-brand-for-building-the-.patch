@@ -1,0 +1,70 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sun, 13 Dec 2015 18:56:09 +0100
+Subject: Use the clusterlabs Publican brand for building the books
+
+---
+ doc/Makefile.am |   18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/doc/Makefile.am b/doc/Makefile.am
+index e96ccb1..d80d61c 100644
+--- a/doc/Makefile.am
++++ b/doc/Makefile.am
+@@ -73,16 +73,20 @@ EXTRA_DIST	= $(docbook:%=%.xml)
+ %.html: %.txt
+ 	$(AM_V_ASCII)$(ASCIIDOC) --unsafe --backend=xhtml11 $<
+ 
++# publican-clusterlabs/xsl/html-single.xsl imports that of Publican
++# through this link during the build
++../xsl:
++	ln -s /usr/share/publican/xsl "$@"
+ 
+ CFS_TXT=$(wildcard Clusters_from_Scratch/en-US/*.txt)
+ CFS_XML=$(CFS_TXT:%.txt=%.xml)
+ 
+ # We have to hardcode the book name
+ # With '%' the test for 'newness' fails
+-Clusters_from_Scratch.build: $(PNGS) $(wildcard Clusters_from_Scratch/en-US/*.xml) $(CFS_XML)
++Clusters_from_Scratch.build: $(PNGS) $(wildcard Clusters_from_Scratch/en-US/*.xml) $(CFS_XML) ../xsl
+ 	$(PCMK_V) @echo Building $(@:%.build=%) because of $?
+ 	rm -rf $(@:%.build=%)/publish/*
+-	$(AM_V_PUB)cd $(@:%.build=%) && RPM_BUILD_DIR="" $(PUBLICAN) build --publish --langs=$(DOCBOOK_LANGS) --formats=$(DOCBOOK_FORMATS) $(PCMK_quiet)
++	$(AM_V_PUB)cd $(@:%.build=%) && RPM_BUILD_DIR="" $(PUBLICAN) build --publish --langs=$(DOCBOOK_LANGS) --formats=$(DOCBOOK_FORMATS) $(PCMK_quiet) --brand_dir=../publican-clusterlabs
+ 	rm -rf $(@:%.build=%)/tmp
+ 	touch $@
+ 
+@@ -91,10 +95,10 @@ PE_XML=$(PE_TXT:%.txt=%.xml)
+ 
+ # We have to hardcode the book name
+ # With '%' the test for 'newness' fails
+-Pacemaker_Explained.build: $(PNGS) $(wildcard Pacemaker_Explained/en-US/*.xml) $(PE_XML)
++Pacemaker_Explained.build: $(PNGS) $(wildcard Pacemaker_Explained/en-US/*.xml) $(PE_XML) ../xsl
+ 	$(PCMK_V) @echo Building $(@:%.build=%) because of $?
+ 	rm -rf $(@:%.build=%)/publish/*
+-	$(AM_V_PUB)cd $(@:%.build=%) && RPM_BUILD_DIR="" $(PUBLICAN) build --publish --langs=$(DOCBOOK_LANGS) --formats=$(DOCBOOK_FORMATS) $(PCMK_quiet)
++	$(AM_V_PUB)cd $(@:%.build=%) && RPM_BUILD_DIR="" $(PUBLICAN) build --publish --langs=$(DOCBOOK_LANGS) --formats=$(DOCBOOK_FORMATS) $(PCMK_quiet) --brand_dir=../publican-clusterlabs
+ 	rm -rf $(@:%.build=%)/tmp
+ 	touch $@
+ 
+@@ -104,10 +108,10 @@ PR_XML=$(PR_TXT:%.txt=%.xml)
+ 
+ # We have to hardcode the book name
+ # With '%' the test for 'newness' fails
+-Pacemaker_Remote.build: $(PNGS) $(wildcard Pacemaker_Remote/en-US/*.xml) $(PR_XML)
++Pacemaker_Remote.build: $(PNGS) $(wildcard Pacemaker_Remote/en-US/*.xml) $(PR_XML) ../xsl
+ 	$(PCMK_V) @echo Building $(@:%.build=%) because of $?
+ 	rm -rf $(@:%.build=%)/publish/*
+-	$(AM_V_PUB)cd $(@:%.build=%) && RPM_BUILD_DIR="" $(PUBLICAN) build --publish --langs=$(DOCBOOK_LANGS) --formats=$(DOCBOOK_FORMATS) $(PCMK_quiet)
++	$(AM_V_PUB)cd $(@:%.build=%) && RPM_BUILD_DIR="" $(PUBLICAN) build --publish --langs=$(DOCBOOK_LANGS) --formats=$(DOCBOOK_FORMATS) $(PCMK_quiet) --brand_dir=../publican-clusterlabs
+ 	rm -rf $(@:%.build=%)/tmp
+ 	touch $@
+ 
+@@ -183,7 +187,7 @@ if BUILD_DOCBOOK
+ endif
+ 
+ clean-local:
+-	-rm -rf $(generated_docs) $(generated_mans) $(docbook_build) $(CFS_XML) $(PE_XML) $(PR_XML)
++	-rm -rf $(generated_docs) $(generated_mans) $(docbook_build) $(CFS_XML) $(PE_XML) $(PR_XML) ../xsl
+ 	for book in $(docbook); do rm -rf $$book/tmp $$book/publish; done
+ 
+ foo:
