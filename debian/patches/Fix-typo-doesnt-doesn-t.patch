@@ -1,0 +1,146 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Mon, 21 Dec 2015 12:20:45 +0100
+Subject: Fix typo: doesnt -> doesn't
+
+---
+ cib/common.c             |    2 +-
+ cts/CTStests.py          |    2 +-
+ extra/showscores.sh      |    4 ++--
+ include/crm/common/xml.h |    2 +-
+ lib/pengine/native.c     |    2 +-
+ lib/pengine/unpack.c     |    2 +-
+ lib/pengine/utils.c      |    6 +++---
+ pengine/native.c         |    2 +-
+ 8 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/cib/common.c b/cib/common.c
+index e9adaaa..a28e0d2 100644
+--- a/cib/common.c
++++ b/cib/common.c
+@@ -160,7 +160,7 @@ cib_cleanup_none(int options, xmlNode ** data, xmlNode ** output)
+ static int
+ cib_cleanup_sync(int options, xmlNode ** data, xmlNode ** output)
+ {
+-    /* data is non-NULL but doesnt need to be free'd */
++    /* data is non-NULL but doesn't need to be free'd */
+     CRM_LOG_ASSERT(*data == NULL);
+     CRM_LOG_ASSERT(*output == NULL);
+     return pcmk_ok;
+diff --git a/cts/CTStests.py b/cts/CTStests.py
+index d2b7668..e240861 100644
+--- a/cts/CTStests.py
++++ b/cts/CTStests.py
+@@ -1433,7 +1433,7 @@ class ComponentFail(CTSTest):
+                     if r.rclass == "stonith":
+                         self.okerrpatterns.append(self.templates["LogActions: Recover.*%s"] % r.id)
+ 
+-        # supply a copy so self.patterns doesnt end up empty
++        # supply a copy so self.patterns doesn't end up empty
+         tmpPats = []
+         tmpPats.extend(self.patterns)
+         self.patterns.extend(chosen.badnews_ignore)
+diff --git a/extra/showscores.sh b/extra/showscores.sh
+index 52b584a..403845c 100644
+--- a/extra/showscores.sh
++++ b/extra/showscores.sh
+@@ -34,7 +34,7 @@ fi
+ tmpfile=/tmp/dkshowscorestmpfiledk
+ tmpfile2=/tmp/dkshowscorestmpfile2dk
+ 
+-#doesnt work in ais clusters
++#doesn't work in ais clusters
+ if ! ps -ef|grep -q -w aisexec; then
+ 	if [ `crmadmin -D | cut -d' ' -f4` != `uname -n|tr "[:upper:]" "[:lower:]"` ] 
+ 		then echo "Warning: Script is not running on DC. This will be slow."
+@@ -83,7 +83,7 @@ get_stickiness() {
+ 	# get meta attribute resource_failure_stickiness
+ 	if ! migrationthreshold=`crm_resource -g migration-threshold -r $res --meta -Q 2>/dev/null`
+ 	then
+-		# if that doesnt exist, use the default value
++		# if that doesn't exist, use the default value
+ 		migrationthreshold="$default_migrationthreshold"
+ 	fi	
+ }
+diff --git a/include/crm/common/xml.h b/include/crm/common/xml.h
+index 968c922..76c6e8c 100644
+--- a/include/crm/common/xml.h
++++ b/include/crm/common/xml.h
+@@ -64,7 +64,7 @@ xmlDoc *getDocPtr(xmlNode * node);
+ 
+ /*
+  * Replacement function for xmlCopyPropList which at the very least,
+- * doesnt work the way *I* would expect it to.
++ * doesn't work the way *I* would expect it to.
+  *
+  * Copy all the attributes/properties from src into target.
+  *
+diff --git a/lib/pengine/native.c b/lib/pengine/native.c
+index f31fd15..b36a11e 100644
+--- a/lib/pengine/native.c
++++ b/lib/pengine/native.c
+@@ -76,7 +76,7 @@ native_add_running(resource_t * rsc, node_t * node, pe_working_set_t * data_set)
+                     GHashTableIter gIter;
+                     node_t *local_node = NULL;
+ 
+-                    /* make sure it doesnt come up again */
++                    /* make sure it doesn't come up again */
+                     g_hash_table_destroy(rsc->allowed_nodes);
+                     rsc->allowed_nodes = node_hash_from_list(data_set->nodes);
+                     g_hash_table_iter_init(&gIter, rsc->allowed_nodes);
+diff --git a/lib/pengine/unpack.c b/lib/pengine/unpack.c
+index 7bb8366..3155577 100644
+--- a/lib/pengine/unpack.c
++++ b/lib/pengine/unpack.c
+@@ -2633,7 +2633,7 @@ unpack_rsc_op_failure(resource_t *rsc, node_t *node, int rc, xmlNode *xml_op, en
+             }
+         }
+         crm_warn("Making sure %s doesn't come up again", fail_rsc->id);
+-        /* make sure it doesnt come up again */
++        /* make sure it doesn't come up again */
+         g_hash_table_destroy(fail_rsc->allowed_nodes);
+         fail_rsc->allowed_nodes = node_hash_from_list(data_set->nodes);
+         g_hash_table_foreach(fail_rsc->allowed_nodes, set_node_score, &score);
+diff --git a/lib/pengine/utils.c b/lib/pengine/utils.c
+index f5789b6..62e9421 100644
+--- a/lib/pengine/utils.c
++++ b/lib/pengine/utils.c
+@@ -512,7 +512,7 @@ custom_action(resource_t * rsc, char *key, const char *task,
+                        action->uuid, action->node->details->uname);
+ 
+         } else if (action->needs == rsc_req_nothing) {
+-            pe_rsc_trace(rsc, "Action %s doesnt require anything", action->uuid);
++            pe_rsc_trace(rsc, "Action %s does not require anything", action->uuid);
+             pe_set_action_bit(action, pe_action_runnable);
+ #if 0
+             /*
+@@ -1345,7 +1345,7 @@ sort_op_by_callid(gconstpointer a, gconstpointer b)
+     crm_element_value_const_int(xml_b, XML_LRM_ATTR_CALLID, &b_call_id);
+ 
+     if (a_call_id == -1 && b_call_id == -1) {
+-        /* both are pending ops so it doesnt matter since
++        /* both are pending ops so it doesn't matter since
+          *   stops are never pending
+          */
+         sort_return(0, "pending");
+@@ -1405,7 +1405,7 @@ sort_op_by_callid(gconstpointer a, gconstpointer b)
+             /*
+              * some of the logic in here may be redundant...
+              *
+-             * if the UUID from the TE doesnt match then one better
++             * if the UUID from the TE doesn't match then one better
+              *   be a pending operation.
+              * pending operations dont survive between elections and joins
+              *   because we query the LRM directly
+diff --git a/pengine/native.c b/pengine/native.c
+index 0a97aaa..935aede 100644
+--- a/pengine/native.c
++++ b/pengine/native.c
+@@ -468,7 +468,7 @@ native_color(resource_t * rsc, node_t * prefer, pe_working_set_t * data_set)
+     print_resource(LOG_DEBUG_2, "Allocating: ", rsc, FALSE);
+     if (rsc->next_role == RSC_ROLE_STOPPED) {
+         pe_rsc_trace(rsc, "Making sure %s doesn't get allocated", rsc->id);
+-        /* make sure it doesnt come up again */
++        /* make sure it doesn't come up again */
+         resource_location(rsc, NULL, -INFINITY, XML_RSC_ATTR_TARGET_ROLE, data_set);
+ 
+     } else if(rsc->next_role > rsc->role
