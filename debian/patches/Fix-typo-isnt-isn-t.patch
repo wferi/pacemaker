@@ -1,0 +1,70 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Mon, 21 Dec 2015 11:44:38 +0100
+Subject: Fix typo: isnt -> isn't
+
+---
+ ChangeLog                  |    2 +-
+ crmd/lrm.c                 |    2 +-
+ lib/pengine/native.c       |    2 +-
+ valgrind-pcmk.suppressions |    4 ++--
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 5471155..e9ad87d 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1861,7 +1861,7 @@
+     Changesets:      184
+     Diff:            513 files changed, 43408 insertions(+), 43783 deletions(-)
+ - Changes since 0.7.0-19
+-  + Fix compilation when GNUTLS isnt found
++  + Fix compilation when GNUTLS isn't found
+   + admin: Fix use-after-free in crm_mon
+   + Build: Remove testing code that prevented heartbeat-only builds
+   + cib: Use single quotes so that the xpath queries for nvpairs will succeed
+diff --git a/crmd/lrm.c b/crmd/lrm.c
+index c632907..6c70591 100644
+--- a/crmd/lrm.c
++++ b/crmd/lrm.c
+@@ -2103,7 +2103,7 @@ do_update_resource(lrm_state_t * lrm_state, lrmd_rsc_info_t * rsc, lrmd_event_da
+      *   we get shot for having resources "running" when the really weren't
+      *
+      * the alternative however means blocking here for too long, which
+-     * isnt acceptable
++     * isn't acceptable
+      */
+     fsa_cib_update(XML_CIB_TAG_STATUS, update, call_opt, rc, NULL);
+ 
+diff --git a/lib/pengine/native.c b/lib/pengine/native.c
+index 2489e44..f31fd15 100644
+--- a/lib/pengine/native.c
++++ b/lib/pengine/native.c
+@@ -58,7 +58,7 @@ native_add_running(resource_t * rsc, node_t * node, pe_working_set_t * data_set)
+     if (is_not_set(rsc->flags, pe_rsc_managed)) {
+         resource_t *p = rsc->parent;
+ 
+-        pe_rsc_info(rsc, "resource %s isnt managed", rsc->id);
++        pe_rsc_info(rsc, "resource %s is not managed", rsc->id);
+         resource_location(rsc, node, INFINITY, "not_managed_default", data_set);
+ 
+         while(p && node->details->online) {
+diff --git a/valgrind-pcmk.suppressions b/valgrind-pcmk.suppressions
+index e7caa55..516c4dc 100644
+--- a/valgrind-pcmk.suppressions
++++ b/valgrind-pcmk.suppressions
+@@ -264,7 +264,7 @@
+ }
+ 
+ {
+-   glib - this isnt funny anymore
++   glib - this is not funny anymore
+    Memcheck:Leak
+    fun:malloc
+    fun:realloc
+@@ -294,4 +294,4 @@
+    obj:*/libgobject-*
+    fun:call_init.part.0
+    fun:_dl_init
+-}
+\ No newline at end of file
++}

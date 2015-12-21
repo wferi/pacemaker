@@ -871,7 +871,7 @@ pacemaker (0.7.1-1) stable; urgency=medium
   + Pending bugs encountered during testing:
 
   * Changes since 0.7.0-19
-  + Fix compilation when GNUTLS isnt found
+  + Fix compilation when GNUTLS isn't found
   + Hg: Use the default branch name for dev
   + High: admin: Fix use-after-free in crm_mon
   + High: Build: Remove testing code that prevented heartbeat-only builds

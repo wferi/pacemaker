@@ -21,3 +21,4 @@ Fix-typo-OPSTIONS-OPTIONS.patch
 Restarting-pacemaker-adds-confusion-only.patch
 Use-the-clusterlabs-Publican-brand-for-building-the-.patch
 Enable-redirecting-etc-init.d-script-calls-to-system.patch
+Fix-typo-isnt-isn-t.patch
