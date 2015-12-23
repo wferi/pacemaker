@@ -1,3 +1,45 @@
+pacemaker (1.1.13-1) unstable; urgency=medium
+
+  * New upstream version, full repackaging
+    (Closes: #633963, #665591, #686342, #700923, #705191, #728431,
+             #739731, #757514, #768618, #768922)
+  * New patch Library-options-go-into-Libs-not-Cflags.patch
+  * Add several patches fixing various typos found by Lintian
+  * The upstream init scripts did not trigger dh_installinit
+  * New patch Fix-typos-dependan-cies-t-dependen-cies-t.patch
+  * Also build the books
+  * New patch Don-t-create-doc-775-the-intent-was-setting-the-mode.patch
+  * New patch hb2openais-was-removed-by-c2344c9-kill-its-documenta.patch
+  * Add Build-Depends-Package info to symbols files
+  * generate_location_rule was an inadvertent export, OK to miss it
+  * Fill out dependencies of pacemaker-dbg
+  * Demote cluster-glue and crmsh | pcs to Suggests
+  * The doc-base Files fields don't take directories
+  * We do not install CTS Python files, so no need to remove them
+    (Closes: #630719)
+  * Reproduce the empty directories created by the upstream install target
+    (Closes: #740324)
+  * Get rid of an adduser warning on install
+  * Do not enable crm_mon.service
+  * New patch Fix-typo-OPSTIONS-OPTIONS.patch
+  * Add my copyright to files under debian/
+  * Remove easily regenerated cruft from debian/rules
+  * Version 1.23 of init-system-helpers does not start disabled services
+  * Recommend fence-agents, they are needed for most clusters
+  * New patch Restarting-pacemaker-adds-confusion-only.patch
+  * New patch Use-the-clusterlabs-Publican-brand-for-building-the-.patch
+  * The books are under CC-BY-SA-3
+  * New patch Enable-redirecting-etc-init.d-script-calls-to-system.patch
+  * New patch Fix-typo-isnt-isn-t.patch
+  * New patch Fix-typo-doesnt-doesn-t.patch
+  * New patch Libraries-go-after-linker-flags.patch
+  * Use autoreconf almost like autogen.sh
+  * New patch Clean-up-generated-files.patch
+  * Clean the Doxygen documentation
+  * Upload to unstable
+
+ -- Ferenc Wágner <wferi@niif.hu>  Wed, 23 Dec 2015 23:16:27 +0100
+
 pacemaker (1.1.11-1) experimental; urgency=medium
 
   * New upstream release
