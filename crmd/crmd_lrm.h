@@ -37,14 +37,20 @@ typedef struct resource_history_s {
     GHashTable *stop_params;
 } rsc_history_t;
 
+void history_free(gpointer data);
+
+/* TDOD - Replace this with lrmd_event_data_t */
 struct recurring_op_s {
-    char *rsc_id;
-    char *op_type;
-    char *op_key;
     int call_id;
     int interval;
     gboolean remove;
     gboolean cancelled;
+    unsigned int start_time;
+    char *rsc_id;
+    char *op_type;
+    char *op_key;
+    char *user_data;
+    GHashTable *params;
 };
 
 typedef struct lrm_state_s {
@@ -57,7 +63,6 @@ typedef struct lrm_state_s {
     GHashTable *resource_history;
     GHashTable *pending_ops;
     GHashTable *deletion_ops;
-
     GHashTable *rsc_info_cache;
 
     int num_lrm_register_fails;
@@ -67,8 +72,6 @@ struct pending_deletion_op_s {
     char *rsc;
     ha_msg_input_t *input;
 };
-
-xmlNode *do_lrm_query_internal(lrm_state_t * lrm_state, gboolean is_replace);
 
 /*!
  * \brief Is this the local ipc connection to the lrmd
@@ -157,3 +160,5 @@ int remote_ra_exec(lrm_state_t * lrm_state, const char *rsc_id, const char *acti
 void remote_ra_cleanup(lrm_state_t * lrm_state);
 
 xmlNode *simple_remote_node_status(const char *node_name, xmlNode *parent, const char *source);
+
+gboolean process_lrm_event(lrm_state_t * lrm_state, lrmd_event_data_t * op, struct recurring_op_s *pending);

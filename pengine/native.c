@@ -564,7 +564,7 @@ is_op_dup(resource_t * rsc, const char *name, const char *interval)
 
     CRM_ASSERT(rsc);
     for (operation = __xml_first_child(rsc->ops_xml); operation != NULL;
-         operation = __xml_next(operation)) {
+         operation = __xml_next_element(operation)) {
         if (crm_str_eq((const char *)operation->name, "op", TRUE)) {
             value = crm_element_value(operation, "name");
             if (safe_str_neq(value, name)) {
@@ -795,7 +795,7 @@ Recurring(resource_t * rsc, action_t * start, node_t * node, pe_working_set_t * 
         xmlNode *operation = NULL;
 
         for (operation = __xml_first_child(rsc->ops_xml); operation != NULL;
-             operation = __xml_next(operation)) {
+             operation = __xml_next_element(operation)) {
             if (crm_str_eq((const char *)operation->name, "op", TRUE)) {
                 RecurringOp(rsc, start, node, operation, data_set);
             }
@@ -935,28 +935,20 @@ RecurringOp_Stopped(resource_t * rsc, action_t * start, node_t * node,
         add_hash_param(stopped_mon->meta, XML_ATTR_TE_TARGET_RC, rc_inactive);
         free(rc_inactive);
 
-        probe_complete_ops = find_actions(data_set->actions, CRM_OP_PROBED, NULL);
-        for (local_gIter = probe_complete_ops; local_gIter != NULL; local_gIter = local_gIter->next) {
-            action_t *probe_complete = (action_t *) local_gIter->data;
+        if (is_set(rsc->flags, pe_rsc_managed)) {
+            char *probe_key = generate_op_key(rsc->id, CRMD_ACTION_STATUS, 0);
+            GListPtr probes = find_actions(rsc->actions, probe_key, stop_node);
+            GListPtr pIter = NULL;
 
-            if (probe_complete->node == NULL) {
-                if (is_set(probe_complete->flags, pe_action_optional) == FALSE) {
-                    probe_is_optional = FALSE;
-                }
+            for (pIter = probes; pIter != NULL; pIter = pIter->next) {
+                action_t *probe = (action_t *) pIter->data;
 
-                if (is_set(probe_complete->flags, pe_action_runnable) == FALSE) {
-                    crm_debug("%s\t   %s (cancelled : probe un-runnable)",
-                              crm_str(stop_node_uname), stopped_mon->uuid);
-                    update_action_flags(stopped_mon, pe_action_runnable | pe_action_clear);
-                }
-
-                if (is_set(rsc->flags, pe_rsc_managed)) {
-                    custom_action_order(NULL, NULL, probe_complete,
-                                        NULL, strdup(key), stopped_mon,
-                                        pe_order_optional, data_set);
-                }
-                break;
+                order_actions(probe, stopped_mon, pe_order_runnable_left);
+                crm_trace("%s then %s on %s\n", probe->uuid, stopped_mon->uuid, stop_node->details->uname);
             }
+
+            g_list_free(probes);
+            free(probe_key);
         }
 
         if (probe_complete_ops) {
@@ -1027,7 +1019,7 @@ Recurring_Stopped(resource_t * rsc, action_t * start, node_t * node, pe_working_
         xmlNode *operation = NULL;
 
         for (operation = __xml_first_child(rsc->ops_xml); operation != NULL;
-             operation = __xml_next(operation)) {
+             operation = __xml_next_element(operation)) {
             if (crm_str_eq((const char *)operation->name, "op", TRUE)) {
                 RecurringOp_Stopped(rsc, start, node, operation, data_set);
             }
@@ -2101,7 +2093,7 @@ native_expand(resource_t * rsc, pe_working_set_t * data_set)
 
 #define STOP_SANITY_ASSERT(lineno) do {                                 \
         if(current && current->details->unclean) {                      \
-            /* It will be a pseduo op */                                \
+            /* It will be a pseudo op */                                \
         } else if(stop == NULL) {                                       \
             crm_err("%s:%d: No stop action exists for %s", __FUNCTION__, lineno, rsc->id); \
             CRM_ASSERT(stop != NULL);                                   \
@@ -2661,6 +2653,7 @@ gboolean
 native_create_probe(resource_t * rsc, node_t * node, action_t * complete,
                     gboolean force, pe_working_set_t * data_set)
 {
+    enum pe_ordering flags = pe_order_optional;
     char *key = NULL;
     action_t *probe = NULL;
     node_t *running = NULL;
@@ -2797,7 +2790,35 @@ native_create_probe(resource_t * rsc, node_t * node, action_t * complete,
         add_hash_param(probe->meta, XML_ATTR_TE_TARGET_RC, rc_master);
     }
 
-    pe_rsc_debug(rsc, "Probing %s on %s (%s)", rsc->id, node->details->uname, role2text(rsc->role));
+    crm_debug("Probing %s on %s (%s) %d %p", rsc->id, node->details->uname, role2text(rsc->role),
+              is_set(probe->flags, pe_action_runnable), rsc->running_on);
+
+    if(is_set(rsc->flags, pe_rsc_fence_device) && is_set(data_set->flags, pe_flag_enable_unfencing)) {
+        top = rsc;
+
+    } else if (top->variant < pe_clone) {
+        top = rsc;
+
+    } else {
+        crm_trace("Probing %s on %s (%s) as %s", rsc->id, node->details->uname, role2text(rsc->role), top->id);
+    }
+
+    if(is_not_set(probe->flags, pe_action_runnable) && rsc->running_on == NULL) {
+        /* Prevent the start from occuring if rsc isn't active, but
+         * don't cause it to stop if it was active already
+         */
+        flags |= pe_order_runnable_left;
+    }
+
+    custom_action_order(rsc, NULL, probe,
+                        top, generate_op_key(top->id, RSC_START, 0), NULL,
+                        flags, data_set);
+
+    if (node && node->details->shutdown == FALSE) {
+        custom_action_order(rsc, NULL, probe,
+                            rsc, generate_op_key(rsc->id, RSC_STOP, 0), NULL,
+                            pe_order_optional, data_set);
+    }
 
     if(is_set(rsc->flags, pe_rsc_fence_device) && is_set(data_set->flags, pe_flag_enable_unfencing)) {
         /* Normally rsc.start depends on probe complete which depends
@@ -2806,9 +2827,6 @@ native_create_probe(resource_t * rsc, node_t * node, action_t * complete,
          *
          * So instead we explicitly order 'rsc.probe then rsc.start'
          */
-        custom_action_order(rsc, NULL, probe,
-                            rsc, generate_op_key(rsc->id, RSC_START, 0), NULL,
-                            pe_order_optional, data_set);
 
     } else {
         order_actions(probe, complete, pe_order_implies_then);
@@ -2817,8 +2835,7 @@ native_create_probe(resource_t * rsc, node_t * node, action_t * complete,
 }
 
 static void
-native_start_constraints(resource_t * rsc, action_t * stonith_op, gboolean is_stonith,
-                         pe_working_set_t * data_set)
+native_start_constraints(resource_t * rsc, action_t * stonith_op, pe_working_set_t * data_set)
 {
     node_t *target = stonith_op ? stonith_op->node : NULL;
 
@@ -2893,13 +2910,23 @@ find_fence_target_node_actions(GListPtr search_list, const char *key, node_t *fe
 }
 
 static void
-native_stop_constraints(resource_t * rsc, action_t * stonith_op, gboolean is_stonith,
-                        pe_working_set_t * data_set)
+native_stop_constraints(resource_t * rsc, action_t * stonith_op, pe_working_set_t * data_set)
 {
     char *key = NULL;
     GListPtr gIter = NULL;
     GListPtr action_list = NULL;
+
+    action_t *start = NULL;
     resource_t *top = uber_parent(rsc);
+
+    key = start_key(rsc);
+    action_list = find_actions(rsc->actions, key, NULL);
+    if(action_list) {
+        start = action_list->data;
+    }
+
+    g_list_free(action_list);
+    free(key);
 
     key = stop_key(rsc);
     action_list = find_fence_target_node_actions(rsc->actions, key, stonith_op->node, data_set);
@@ -2932,7 +2959,7 @@ native_stop_constraints(resource_t * rsc, action_t * stonith_op, gboolean is_sto
         update_action_flags(action, pe_action_runnable);
         update_action_flags(action, pe_action_implied_by_stonith);
 
-        {
+        if(start == NULL || start->needs > rsc_req_quorum) {
             enum pe_ordering flags = pe_order_optional;
             action_t *parent_stop = find_first_action(top->actions, NULL, RSC_STOP, NULL);
 
@@ -3032,7 +3059,8 @@ native_stop_constraints(resource_t * rsc, action_t * stonith_op, gboolean is_sto
             crm_trace("here - 1");
             update_action_flags(action, pe_action_pseudo);
             update_action_flags(action, pe_action_runnable);
-            if (is_stonith == FALSE) {
+
+            if (start == NULL || start->needs > rsc_req_quorum) {
                 order_actions(stonith_op, action, pe_order_preserve|pe_order_optional);
             }
         }
@@ -3044,8 +3072,6 @@ native_stop_constraints(resource_t * rsc, action_t * stonith_op, gboolean is_sto
 void
 rsc_stonith_ordering(resource_t * rsc, action_t * stonith_op, pe_working_set_t * data_set)
 {
-    gboolean is_stonith = FALSE;
-
     if (rsc->children) {
         GListPtr gIter = NULL;
 
@@ -3063,11 +3089,11 @@ rsc_stonith_ordering(resource_t * rsc, action_t * stonith_op, pe_working_set_t *
     }
 
     /* Start constraints */
-    native_start_constraints(rsc, stonith_op, is_stonith, data_set);
+    native_start_constraints(rsc, stonith_op, data_set);
 
     /* Stop constraints */
     if (stonith_op) {
-        native_stop_constraints(rsc, stonith_op, is_stonith, data_set);
+        native_stop_constraints(rsc, stonith_op, data_set);
     }
 }
 

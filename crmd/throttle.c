@@ -92,66 +92,21 @@ int throttle_num_cores(void)
     return cores;
 }
 
+/*
+ * \internal
+ * \brief Return name of /proc file containing the CIB deamon's load statistics
+ *
+ * \return Newly allocated memory with file name on success, NULL otherwise
+ *
+ * \note It is the caller's responsibility to free the return value.
+ *       This will return NULL if the daemon is being run via valgrind.
+ *       This should be called only on Linux systems.
+ */
 static char *find_cib_loadfile(void) 
 {
-    DIR *dp;
-    struct dirent *entry;
-    struct stat statbuf;
-    char *match = NULL;
+    int pid = crm_procfs_pid_of("cib");
 
-    dp = opendir("/proc");
-    if (!dp) {
-        /* no proc directory to search through */
-        crm_notice("Can not read /proc directory to track existing components");
-        return FALSE;
-    }
-
-    while ((entry = readdir(dp)) != NULL) {
-        char procpath[128];
-        char value[64];
-        char key[16];
-        FILE *file;
-        int pid;
-
-        strcpy(procpath, "/proc/");
-        /* strlen("/proc/") + strlen("/status") + 1 = 14
-         * 128 - 14 = 114 */
-        strncat(procpath, entry->d_name, 114);
-
-        if (lstat(procpath, &statbuf)) {
-            continue;
-        }
-        if (!S_ISDIR(statbuf.st_mode) || !isdigit(entry->d_name[0])) {
-            continue;
-        }
-
-        strcat(procpath, "/status");
-
-        file = fopen(procpath, "r");
-        if (!file) {
-            continue;
-        }
-        if (fscanf(file, "%15s%63s", key, value) != 2) {
-            fclose(file);
-            continue;
-        }
-        fclose(file);
-
-        if (safe_str_neq("cib", value)) {
-            continue;
-        }
-
-        pid = atoi(entry->d_name);
-        if (pid <= 0) {
-            continue;
-        }
-
-        match = crm_strdup_printf("/proc/%d/stat", pid);
-        break;
-    }
-
-    closedir(dp);
-    return match;
+    return pid? crm_strdup_printf("/proc/%d/stat", pid) : NULL;
 }
 
 static bool throttle_cib_load(float *load) 
@@ -214,6 +169,10 @@ static bool throttle_cib_load(float *load)
         last_utime = 0;
         last_stime = 0;
         loadfile = find_cib_loadfile();
+        if (loadfile == NULL) {
+            crm_warn("Couldn't find CIB load file");
+            return FALSE;
+        }
         ticks_per_s = sysconf(_SC_CLK_TCK);
         crm_trace("Found %s", loadfile);
     }
@@ -414,7 +373,7 @@ throttle_handle_load(float load, const char *desc, int cores)
         return throttle_med;
 
     } else if(adjusted_load > THROTTLE_FACTOR_LOW * throttle_load_target) {
-        crm_debug("Noticable %s detected: %f", desc, load);
+        crm_debug("Noticeable %s detected: %f", desc, load);
         return throttle_low;
     }
 
@@ -470,7 +429,7 @@ throttle_mode(void)
             mode |= throttle_med;
 
         } else if(load > cib_max_cpu * 0.8) {
-            crm_debug("Noticable %s detected: %f", desc, load);
+            crm_debug("Noticeable %s detected: %f", desc, load);
             mode |= throttle_low;
 
         } else {

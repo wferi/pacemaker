@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 David Vossel <dvossel@redhat.com>
+ * Copyright (c) 2012 David Vossel <davidvossel@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,6 +51,8 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+
+#define MAX_TLS_RECV_WAIT 10000
 
 CRM_TRACE_INIT_DATA(lrmd);
 
@@ -589,8 +591,8 @@ lrmd_tls_recv_reply(lrmd_t * lrmd, int total_timeout, int expected_reply_id, int
 
     /* A timeout of 0 here makes no sense.  We have to wait a period of time
      * for the response to come back.  If -1 or 0, default to 10 seconds. */
-    if (total_timeout <= 0) {
-        total_timeout = 10000;
+    if (total_timeout <= 0 || total_timeout > MAX_TLS_RECV_WAIT) {
+        total_timeout = MAX_TLS_RECV_WAIT;
     }
 
     while (!xml) {
@@ -958,6 +960,7 @@ lrmd_ipc_connect(lrmd_t * lrmd, int *fd)
         if (native->ipc && crm_ipc_connect(native->ipc)) {
             *fd = crm_ipc_get_fd(native->ipc);
         } else if (native->ipc) {
+            crm_perror(LOG_ERR, "Connection to local resource manager failed");
             rc = -ENOTCONN;
         }
     } else {
@@ -1058,13 +1061,17 @@ lrmd_tls_set_key(gnutls_datum_t * key)
     if (set_key(key, specific_location) == 0) {
         crm_debug("Using custom authkey location %s", specific_location);
         return 0;
+
+    } else if (specific_location) {
+        crm_err("No valid lrmd remote key found at %s, trying default location", specific_location);
     }
 
-    if (set_key(key, DEFAULT_REMOTE_KEY_LOCATION)) {
+    if (set_key(key, DEFAULT_REMOTE_KEY_LOCATION) != 0) {
         rc = set_key(key, ALT_REMOTE_KEY_LOCATION);
     }
+
     if (rc) {
-        crm_err("No lrmd remote key found");
+        crm_err("No valid lrmd remote key found at %s", DEFAULT_REMOTE_KEY_LOCATION);
         return -1;
     }
 
@@ -1366,7 +1373,7 @@ lrmd_api_disconnect(lrmd_t * lrmd)
 {
     lrmd_private_t *native = lrmd->private;
 
-    crm_info("Disconnecting from lrmd service");
+    crm_info("Disconnecting from %d lrmd service", native->type);
     switch (native->type) {
         case CRM_CLIENT_IPC:
             lrmd_ipc_disconnect(lrmd);
@@ -1470,7 +1477,7 @@ lrmd_api_get_rsc_info(lrmd_t * lrmd, const char *rsc_id, enum lrmd_call_options 
 
     crm_xml_add(data, F_LRMD_ORIGIN, __FUNCTION__);
     crm_xml_add(data, F_LRMD_RSC_ID, rsc_id);
-    lrmd_send_command(lrmd, LRMD_OP_RSC_INFO, data, &output, 30000, options, TRUE);
+    lrmd_send_command(lrmd, LRMD_OP_RSC_INFO, data, &output, 0, options, TRUE);
     free_xml(data);
 
     if (!output) {
@@ -1608,13 +1615,25 @@ stonith_get_metadata(const char *provider, const char *type, char **output)
         }                                       \
     } while(0)
 
-#define lsb_meta_helper_get_value(buffer, ptr, keyword)                 \
-    do {                                                                \
-        if (!ptr && !strncasecmp(buffer, keyword, strlen(keyword))) {   \
-            (ptr) = (char *)xmlEncodeEntitiesReentrant(NULL, BAD_CAST buffer+strlen(keyword)); \
-            continue;                                                   \
-        }                                                               \
-    } while(0)
+/*
+ * \internal
+ * \brief Grab an LSB header value
+ *
+ * \param[in]     line    Line read from LSB init script
+ * \param[in/out] value   If not set, will be set to XML-safe copy of value
+ * \param[in]     prefix  Set value if line starts with this pattern
+ *
+ * \return TRUE if value was set, FALSE otherwise
+ */
+static inline gboolean
+lsb_meta_helper_get_value(const char *line, char **value, const char *prefix)
+{
+    if (!*value && !strncasecmp(line, prefix, strlen(prefix))) {
+        *value = (char *)xmlEncodeEntitiesReentrant(NULL, BAD_CAST line+strlen(prefix));
+        return TRUE;
+    }
+    return FALSE;
+}
 
 static int
 lsb_get_metadata(const char *type, char **output)
@@ -1650,14 +1669,30 @@ lsb_get_metadata(const char *type, char **output)
     while (fgets(buffer, sizeof(buffer), fp)) {
 
         /* Now suppose each of the following eight arguments contain only one line */
-        lsb_meta_helper_get_value(buffer, provides, PROVIDES);
-        lsb_meta_helper_get_value(buffer, req_start, REQ_START);
-        lsb_meta_helper_get_value(buffer, req_stop, REQ_STOP);
-        lsb_meta_helper_get_value(buffer, shld_start, SHLD_START);
-        lsb_meta_helper_get_value(buffer, shld_stop, SHLD_STOP);
-        lsb_meta_helper_get_value(buffer, dflt_start, DFLT_START);
-        lsb_meta_helper_get_value(buffer, dflt_stop, DFLT_STOP);
-        lsb_meta_helper_get_value(buffer, s_dscrpt, SHORT_DSCR);
+        if (lsb_meta_helper_get_value(buffer, &provides, PROVIDES)) {
+            continue;
+        }
+        if (lsb_meta_helper_get_value(buffer, &req_start, REQ_START)) {
+            continue;
+        }
+        if (lsb_meta_helper_get_value(buffer, &req_stop, REQ_STOP)) {
+            continue;
+        }
+        if (lsb_meta_helper_get_value(buffer, &shld_start, SHLD_START)) {
+            continue;
+        }
+        if (lsb_meta_helper_get_value(buffer, &shld_stop, SHLD_STOP)) {
+            continue;
+        }
+        if (lsb_meta_helper_get_value(buffer, &dflt_start, DFLT_START)) {
+            continue;
+        }
+        if (lsb_meta_helper_get_value(buffer, &dflt_stop, DFLT_STOP)) {
+            continue;
+        }
+        if (lsb_meta_helper_get_value(buffer, &s_dscrpt, SHORT_DSCR)) {
+            continue;
+        }
 
         /* Long description may cross multiple lines */
         if (offset == 0 && (0 == strncasecmp(buffer, DESCRIPTION, strlen(DESCRIPTION)))) {

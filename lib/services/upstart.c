@@ -77,7 +77,7 @@ upstart_cleanup(void)
 }
 
 static gboolean
-upstart_job_by_name(const gchar * arg_name, gchar ** out_unit)
+upstart_job_by_name(const gchar * arg_name, gchar ** out_unit, int timeout)
 {
 /*
   com.ubuntu.Upstart0_6.GetJobByName (in String name, out ObjectPath job)
@@ -97,7 +97,7 @@ upstart_job_by_name(const gchar * arg_name, gchar ** out_unit)
 
     dbus_error_init(&error);
     CRM_LOG_ASSERT(dbus_message_append_args(msg, DBUS_TYPE_STRING, &arg_name, DBUS_TYPE_INVALID));
-    reply = pcmk_dbus_send_recv(msg, upstart_proxy, &error);
+    reply = pcmk_dbus_send_recv(msg, upstart_proxy, &error, timeout);
     dbus_message_unref(msg);
 
     if(error.name) {
@@ -190,7 +190,7 @@ upstart_job_listall(void)
                                        method); // method name
     CRM_ASSERT(msg != NULL);
 
-    reply = pcmk_dbus_send_recv(msg, upstart_proxy, &error);
+    reply = pcmk_dbus_send_recv(msg, upstart_proxy, &error, DBUS_TIMEOUT_USE_DEFAULT);
     dbus_message_unref(msg);
 
     if(error.name) {
@@ -246,11 +246,11 @@ upstart_job_listall(void)
 gboolean
 upstart_job_exists(const char *name)
 {
-    return upstart_job_by_name(name, NULL);
+    return upstart_job_by_name(name, NULL, DBUS_TIMEOUT_USE_DEFAULT);
 }
 
 static char *
-get_first_instance(const gchar * job)
+get_first_instance(const gchar * job, int timeout)
 {
     char *instance = NULL;
     const char *method = "GetAllInstances";
@@ -268,7 +268,7 @@ get_first_instance(const gchar * job)
     CRM_ASSERT(msg != NULL);
 
     dbus_message_append_args(msg, DBUS_TYPE_INVALID);
-    reply = pcmk_dbus_send_recv(msg, upstart_proxy, &error);
+    reply = pcmk_dbus_send_recv(msg, upstart_proxy, &error, timeout);
     dbus_message_unref(msg);
 
     if(error.name) {
@@ -322,10 +322,7 @@ upstart_job_check(const char *name, const char *state, void *userdata)
     }
 
     if (op->synchronous == FALSE) {
-        if (op->opaque->pending) {
-            dbus_pending_call_unref(op->opaque->pending);
-        }
-        op->opaque->pending = NULL;
+        services_set_op_pending(op, NULL);
         operation_finalize(op);
     }
 }
@@ -392,6 +389,7 @@ upstart_async_dispatch(DBusPendingCall *pending, void *user_data)
     if(pending) {
         reply = dbus_pending_call_steal_reply(pending);
     }
+
     if(pcmk_dbus_find_error(op->action, pending, reply, &error)) {
 
         /* ignore "already started" or "not running" errors */
@@ -419,16 +417,17 @@ upstart_async_dispatch(DBusPendingCall *pending, void *user_data)
         }
     }
 
+    CRM_LOG_ASSERT(pending == op->opaque->pending);
+    services_set_op_pending(op, NULL);
     operation_finalize(op);
 
-    if(pending) {
-        dbus_pending_call_unref(pending);
-    }
     if(reply) {
         dbus_message_unref(reply);
     }
 }
 
+/* For an asynchronous 'op', returns FALSE if 'op' should be free'd by the caller */
+/* For a synchronous 'op', returns FALSE if 'op' fails */
 gboolean
 upstart_job_exec(svc_action_t * op, gboolean synchronous)
 {
@@ -451,7 +450,7 @@ upstart_job_exec(svc_action_t * op, gboolean synchronous)
         goto cleanup;
     }
 
-    if(!upstart_job_by_name(op->agent, &job)) {
+    if(!upstart_job_by_name(op->agent, &job, op->timeout)) {
         crm_debug("Could not obtain job named '%s' to %s", op->agent, action);
         if (!g_strcmp0(action, "stop")) {
             op->rc = PCMK_OCF_OK;
@@ -465,7 +464,7 @@ upstart_job_exec(svc_action_t * op, gboolean synchronous)
 
     if (safe_str_eq(op->action, "monitor") || safe_str_eq(action, "status")) {
 
-        char *path = get_first_instance(job);
+        char *path = get_first_instance(job, op->timeout);
 
         op->rc = PCMK_OCF_NOT_RUNNING;
         if(path) {
@@ -473,7 +472,7 @@ upstart_job_exec(svc_action_t * op, gboolean synchronous)
             char *state = pcmk_dbus_get_property(
                 upstart_proxy, BUS_NAME, path, UPSTART_06_API ".Instance", "state",
                 op->synchronous?NULL:upstart_job_check, op,
-                op->synchronous?NULL:&pending);
+                op->synchronous?NULL:&pending, op->timeout);
 
             free(job);
             free(path);
@@ -483,8 +482,8 @@ upstart_job_exec(svc_action_t * op, gboolean synchronous)
                 free(state);
                 return op->rc == PCMK_OCF_OK;
             } else if (pending) {
-                dbus_pending_call_ref(pending);
-                op->opaque->pending = pending;
+                services_set_op_pending(op, pending);
+                services_add_inflight_op(op);
                 return TRUE;
             }
             return FALSE;
@@ -523,19 +522,19 @@ upstart_job_exec(svc_action_t * op, gboolean synchronous)
     CRM_LOG_ASSERT(dbus_message_append_args(msg, DBUS_TYPE_BOOLEAN, &arg_wait, DBUS_TYPE_INVALID));
 
     if (op->synchronous == FALSE) {
-        DBusPendingCall* pending = pcmk_dbus_send(msg, upstart_proxy, upstart_async_dispatch, op);
+        DBusPendingCall* pending = pcmk_dbus_send(msg, upstart_proxy, upstart_async_dispatch, op, op->timeout);
         free(job);
 
         if(pending) {
-            dbus_pending_call_ref(pending);
-            op->opaque->pending = pending;
+            services_set_op_pending(op, pending);
+            services_add_inflight_op(op);
             return TRUE;
         }
         return FALSE;
     }
 
     dbus_error_init(&error);
-    reply = pcmk_dbus_send_recv(msg, upstart_proxy, &error);
+    reply = pcmk_dbus_send_recv(msg, upstart_proxy, &error, op->timeout);
 
     if(error.name) {
         if(!upstart_mask_error(op, error.name)) {
@@ -572,8 +571,7 @@ upstart_job_exec(svc_action_t * op, gboolean synchronous)
     }
 
     if (op->synchronous == FALSE) {
-        operation_finalize(op);
-        return TRUE;
+        return operation_finalize(op);
     }
     return op->rc == PCMK_OCF_OK;
 }

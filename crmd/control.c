@@ -41,6 +41,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+/* Enable support for built-in notifications
+ *
+ * The interface is expected to change significantly, and this will be defined
+ * in the upstream master branch only until a new design is finalized.
+ */
+#define RHEL7_COMPAT
+
 qb_ipcs_service_t *ipcs = NULL;
 
 extern gboolean crm_connect_corosync(crm_cluster_t * cluster);
@@ -86,6 +93,7 @@ do_ha_control(long long action,
 
     if (action & A_HA_CONNECT) {
         crm_set_status_callback(&peer_update_callback);
+        crm_set_autoreap(FALSE);
 
         if (is_openais_cluster()) {
 #if SUPPORT_COROSYNC
@@ -227,7 +235,7 @@ extern char *max_generation_from;
 extern xmlNode *max_generation_xml;
 extern GHashTable *resource_history;
 extern GHashTable *voted;
-extern GHashTable *reload_hash;
+extern GHashTable *metadata_hash;
 extern char *te_client_id;
 
 void log_connected_client(gpointer key, gpointer value, gpointer user_data);
@@ -341,9 +349,9 @@ crmd_exit(int rc)
     free(te_subsystem); te_subsystem = NULL;
     free(cib_subsystem); cib_subsystem = NULL;
 
-    if (reload_hash) {
-        crm_trace("Destroying reload cache with %d members", g_hash_table_size(reload_hash));
-        g_hash_table_destroy(reload_hash); reload_hash = NULL;
+    if (metadata_hash) {
+        crm_trace("Destroying reload cache with %d members", g_hash_table_size(metadata_hash));
+        g_hash_table_destroy(metadata_hash); metadata_hash = NULL;
     }
 
     election_fini(fsa_election);
@@ -872,28 +880,67 @@ do_recover(long long action,
 
 /* *INDENT-OFF* */
 pe_cluster_option crmd_opts[] = {
-	/* name, old-name, validate, default, description */
-	{ "dc-version", NULL, "string", NULL, "none", NULL, "Version of Pacemaker on the cluster's DC.", "Includes the hash which identifies the exact Mercurial changeset it was built from.  Used for diagnostic purposes." },
-	{ "cluster-infrastructure", NULL, "string", NULL, "heartbeat", NULL, "The messaging stack on which Pacemaker is currently running.", "Used for informational and diagnostic purposes." },
-	{ XML_CONFIG_ATTR_DC_DEADTIME, "dc_deadtime", "time", NULL, "20s", &check_time, "How long to wait for a response from other nodes during startup.", "The \"correct\" value will depend on the speed/load of your network and the type of switches used." },
+	/* name, old-name, validate, values, default, short description, long description */
+	{ "dc-version", NULL, "string", NULL, "none", NULL,
+          "Version of Pacemaker on the cluster's DC.",
+          "Includes the hash which identifies the exact changeset it was built from.  Used for diagnostic purposes."
+        },
+	{ "cluster-infrastructure", NULL, "string", NULL, "heartbeat", NULL,
+          "The messaging stack on which Pacemaker is currently running.",
+          "Used for informational and diagnostic purposes." },
+	{ XML_CONFIG_ATTR_DC_DEADTIME, "dc_deadtime", "time", NULL, "20s", &check_time,
+          "How long to wait for a response from other nodes during startup.",
+          "The \"correct\" value will depend on the speed/load of your network and the type of switches used."
+        },
 	{ XML_CONFIG_ATTR_RECHECK, "cluster_recheck_interval", "time",
-	  "Zero disables polling.  Positive values are an interval in seconds (unless other SI units are specified. eg. 5min)", "15min", &check_timer,
+	  "Zero disables polling.  Positive values are an interval in seconds (unless other SI units are specified. eg. 5min)",
+          "15min", &check_timer,
 	  "Polling interval for time based changes to options, resource parameters and constraints.",
 	  "The Cluster is primarily event driven, however the configuration can have elements that change based on time."
-	  "  To ensure these changes take effect, we can optionally poll the cluster's status for changes." },
+	  "  To ensure these changes take effect, we can optionally poll the cluster's status for changes."
+        },
+
+#ifdef RHEL7_COMPAT
+    /* this interface is expected to change but was released in RHEL 7 */
+	{ "notification-agent", NULL, "string", NULL, "/dev/null", &check_script,
+          "Notification script or tool to be called after significant cluster events",
+          "Full path to a script or binary that will be invoked when resources start/stop/fail, fencing occurs or nodes join/leave the cluster.\n"
+          "Must exist on all nodes in the cluster."
+        },
+	{ "notification-recipient", NULL, "string", NULL, "", NULL,
+          "Destination for notifications (Optional)",
+          "Where should the supplied script send notifications to.  Useful to avoid hard-coding this in the script."
+        },
+#endif
+
 	{ "load-threshold", NULL, "percentage", NULL, "80%", &check_utilization,
 	  "The maximum amount of system resources that should be used by nodes in the cluster",
 	  "The cluster will slow down its recovery process when the amount of system resources used"
-          " (currently CPU) approaches this limit", },
+          " (currently CPU) approaches this limit",
+        },
 	{ "node-action-limit", NULL, "integer", NULL, "0", &check_number,
           "The maximum number of jobs that can be scheduled per node. Defaults to 2x cores"},
-	{ XML_CONFIG_ATTR_ELECTION_FAIL, "election_timeout", "time", NULL, "2min", &check_timer, "*** Advanced Use Only ***.", "If need to adjust this value, it probably indicates the presence of a bug." },
-	{ XML_CONFIG_ATTR_FORCE_QUIT, "shutdown_escalation", "time", NULL, "20min", &check_timer, "*** Advanced Use Only ***.", "If need to adjust this value, it probably indicates the presence of a bug." },
-	{ "crmd-integration-timeout", NULL, "time", NULL, "3min", &check_timer, "*** Advanced Use Only ***.", "If need to adjust this value, it probably indicates the presence of a bug." },
-	{ "crmd-finalization-timeout", NULL, "time", NULL, "30min", &check_timer, "*** Advanced Use Only ***.", "If you need to adjust this value, it probably indicates the presence of a bug." },
-	{ "crmd-transition-delay", NULL, "time", NULL, "0s", &check_timer, "*** Advanced Use Only ***\nEnabling this option will slow down cluster recovery under all conditions", "Delay cluster recovery for the configured interval to allow for additional/related events to occur.\nUseful if your configuration is sensitive to the order in which ping updates arrive." },
+	{ XML_CONFIG_ATTR_ELECTION_FAIL, "election_timeout", "time", NULL, "2min", &check_timer,
+          "*** Advanced Use Only ***.", "If need to adjust this value, it probably indicates the presence of a bug."
+        },
+	{ XML_CONFIG_ATTR_FORCE_QUIT, "shutdown_escalation", "time", NULL, "20min", &check_timer,
+          "*** Advanced Use Only ***.", "If need to adjust this value, it probably indicates the presence of a bug."
+        },
+	{ "crmd-integration-timeout", NULL, "time", NULL, "3min", &check_timer,
+          "*** Advanced Use Only ***.", "If need to adjust this value, it probably indicates the presence of a bug."
+        },
+	{ "crmd-finalization-timeout", NULL, "time", NULL, "30min", &check_timer,
+          "*** Advanced Use Only ***.", "If you need to adjust this value, it probably indicates the presence of a bug."
+        },
+	{ "crmd-transition-delay", NULL, "time", NULL, "0s", &check_timer,
+          "*** Advanced Use Only ***\n"
+          "Enabling this option will slow down cluster recovery under all conditions",
+          "Delay cluster recovery for the configured interval to allow for additional/related events to occur.\n"
+          "Useful if your configuration is sensitive to the order in which ping updates arrive."
+        },
 	{ "stonith-watchdog-timeout", NULL, "time", NULL, NULL, &check_timer,
-	  "How long to wait before we can assume nodes are safely down", NULL },
+	  "How long to wait before we can assume nodes are safely down", NULL
+        },
 	{ "no-quorum-policy", "no_quorum_policy", "enum", "stop, freeze, ignore, suicide", "stop", &check_quorum, NULL, NULL },
 
 #if SUPPORT_PLUGIN
@@ -926,6 +973,9 @@ crmd_pref(GHashTable * options, const char *name)
 static void
 config_query_callback(xmlNode * msg, int call_id, int rc, xmlNode * output, void *user_data)
 {
+#ifdef RHEL7_COMPAT
+    const char *script = NULL;
+#endif
     const char *value = NULL;
     GHashTable *config_hash = NULL;
     crm_time_t *now = crm_time_new(NULL);
@@ -953,6 +1003,12 @@ config_query_callback(xmlNode * msg, int call_id, int rc, xmlNode * output, void
                                CIB_OPTIONS_FIRST, FALSE, now);
 
     verify_crmd_options(config_hash);
+
+#ifdef RHEL7_COMPAT
+    script = crmd_pref(config_hash, "notification-agent");
+    value  = crmd_pref(config_hash, "notification-recipient");
+    crmd_enable_notifications(script, value);
+#endif
 
     value = crmd_pref(config_hash, XML_CONFIG_ATTR_DC_DEADTIME);
     election_trigger->period_ms = crm_get_msec(value);

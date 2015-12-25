@@ -180,6 +180,33 @@ check_quorum(const char *value)
 }
 
 gboolean
+check_script(const char *value)
+{
+    struct stat st;
+
+    if(safe_str_eq(value, "/dev/null")) {
+        return TRUE;
+    }
+
+    if(stat(value, &st) != 0) {
+        crm_err("Script %s does not exist", value);
+        return FALSE;
+    }
+
+    if(S_ISREG(st.st_mode) == 0) {
+        crm_err("Script %s is not a regular file", value);
+        return FALSE;
+    }
+
+    if( (st.st_mode & (S_IXUSR | S_IXGRP )) == 0) {
+        crm_err("Script %s is not executable", value);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+gboolean
 check_utilization(const char *value)
 {
     char *end = NULL;
@@ -1092,43 +1119,6 @@ filter_action_parameters(xmlNode * param_set, const char *version)
     free(key);
 }
 
-void
-filter_reload_parameters(xmlNode * param_set, const char *restart_string)
-{
-    int len = 0;
-    char *name = NULL;
-    char *match = NULL;
-
-    if (param_set == NULL) {
-        return;
-    }
-
-    if (param_set) {
-        xmlAttrPtr xIter = param_set->properties;
-
-        while (xIter) {
-            const char *prop_name = (const char *)xIter->name;
-
-            xIter = xIter->next;
-            name = NULL;
-            len = strlen(prop_name) + 3;
-
-            name = malloc(len);
-            if(name) {
-                sprintf(name, " %s ", prop_name);
-                name[len - 1] = 0;
-                match = strstr(restart_string, name);
-            }
-
-            if (match == NULL) {
-                crm_trace("%s not found in %s", prop_name, restart_string);
-                xml_remove_prop(param_set, prop_name);
-            }
-            free(name);
-        }
-    }
-}
-
 extern bool crm_is_daemon;
 
 /* coverity[+kill] */
@@ -1194,23 +1184,34 @@ crm_abort(const char *file, const char *function, int line,
     crm_perror(LOG_ERR, "Cannot wait on forked child %d", pid);
 }
 
-#define	LOCKSTRLEN	11
-
 int
-crm_pid_active(long pid)
+crm_pid_active(long pid, const char *daemon)
 {
+    static int have_proc_pid = 0;
+
+    if(have_proc_pid == 0) {
+        char proc_path[PATH_MAX], exe_path[PATH_MAX];
+
+        /* check to make sure pid hasn't been reused by another process */
+        snprintf(proc_path, sizeof(proc_path), "/proc/%lu/exe", (long unsigned int)getpid());
+
+        have_proc_pid = 1;
+        if(readlink(proc_path, exe_path, PATH_MAX - 1) < 0) {
+            have_proc_pid = -1;
+        }
+    }
+
     if (pid <= 0) {
         return -1;
 
     } else if (kill(pid, 0) < 0 && errno == ESRCH) {
         return 0;
-    }
-#ifndef HAVE_PROC_PID
-    return 1;
-#else
-    {
+
+    } else if(daemon == NULL || have_proc_pid == -1) {
+        return 1;
+
+    } else {
         int rc = 0;
-        int running = 0;
         char proc_path[PATH_MAX], exe_path[PATH_MAX], myexe_path[PATH_MAX];
 
         /* check to make sure pid hasn't been reused by another process */
@@ -1219,27 +1220,28 @@ crm_pid_active(long pid)
         rc = readlink(proc_path, exe_path, PATH_MAX - 1);
         if (rc < 0) {
             crm_perror(LOG_ERR, "Could not read from %s", proc_path);
-            goto bail;
+            return 0;
         }
 
         exe_path[rc] = 0;
-        snprintf(proc_path, sizeof(proc_path), "/proc/%lu/exe", (long unsigned int)getpid());
-        rc = readlink(proc_path, myexe_path, PATH_MAX - 1);
-        if (rc < 0) {
-            crm_perror(LOG_ERR, "Could not read from %s", proc_path);
-            goto bail;
-        }
 
-        myexe_path[rc] = 0;
+        if(daemon[0] != '/') {
+            rc = snprintf(myexe_path, sizeof(proc_path), CRM_DAEMON_DIR"/%s", daemon);
+            myexe_path[rc] = 0;
+        } else {
+            rc = snprintf(myexe_path, sizeof(proc_path), "%s", daemon);
+            myexe_path[rc] = 0;
+        }
+        
         if (strcmp(exe_path, myexe_path) == 0) {
-            running = 1;
+            return 1;
         }
     }
 
-  bail:
-    return running;
-#endif
+    return 0;
 }
+
+#define	LOCKSTRLEN	11
 
 int
 crm_read_pidfile(const char *filename)
@@ -1270,7 +1272,7 @@ crm_read_pidfile(const char *filename)
 }
 
 int
-crm_pidfile_inuse(const char *filename, long mypid)
+crm_pidfile_inuse(const char *filename, long mypid, const char *daemon)
 {
     long pid = 0;
     struct stat sbuf;
@@ -1295,7 +1297,7 @@ crm_pidfile_inuse(const char *filename, long mypid)
                     /* In use by us */
                     rc = pcmk_ok;
 
-                } else if (crm_pid_active(pid) == FALSE) {
+                } else if (crm_pid_active(pid, daemon) == FALSE) {
                     /* Contains a stale value */
                     unlink(filename);
                     rc = -ENOENT;
@@ -1312,7 +1314,7 @@ crm_pidfile_inuse(const char *filename, long mypid)
 }
 
 static int
-crm_lock_pidfile(const char *filename)
+crm_lock_pidfile(const char *filename, const char *name)
 {
     long mypid = 0;
     int fd = 0, rc = 0;
@@ -1320,7 +1322,7 @@ crm_lock_pidfile(const char *filename)
 
     mypid = (unsigned long)getpid();
 
-    rc = crm_pidfile_inuse(filename, 0);
+    rc = crm_pidfile_inuse(filename, 0, name);
     if (rc == -ENOENT) {
         /* exists but the process is not active */
 
@@ -1343,7 +1345,7 @@ crm_lock_pidfile(const char *filename)
         return -errno;
     }
 
-    return crm_pidfile_inuse(filename, mypid);
+    return crm_pidfile_inuse(filename, mypid, name);
 }
 
 void
@@ -1358,7 +1360,7 @@ crm_make_daemon(const char *name, gboolean daemonize, const char *pidfile)
     }
 
     /* Check before we even try... */
-    rc = crm_pidfile_inuse(pidfile, 1);
+    rc = crm_pidfile_inuse(pidfile, 1, name);
     if(rc < pcmk_ok && rc != -ENOENT) {
         pid = crm_read_pidfile(pidfile);
         crm_err("%s: already running [pid %ld in %s]", name, pid, pidfile);
@@ -1376,7 +1378,7 @@ crm_make_daemon(const char *name, gboolean daemonize, const char *pidfile)
         crm_exit(pcmk_ok);
     }
 
-    rc = crm_lock_pidfile(pidfile);
+    rc = crm_lock_pidfile(pidfile, name);
     if(rc < pcmk_ok) {
         crm_err("Could not lock '%s' for %s: %s (%d)", pidfile, name, pcmk_strerror(rc), rc);
         printf("Could not lock '%s' for %s: %s (%d)\n", pidfile, name, pcmk_strerror(rc), rc);
@@ -1613,13 +1615,13 @@ crm_help(char cmd, int exit_code)
     FILE *stream = (exit_code ? stderr : stdout);
 
     if (cmd == 'v' || cmd == '$') {
-        fprintf(stream, "Pacemaker %s\n", VERSION);
+        fprintf(stream, "Pacemaker %s\n", PACEMAKER_VERSION);
         fprintf(stream, "Written by Andrew Beekhof\n");
         goto out;
     }
 
     if (cmd == '!') {
-        fprintf(stream, "Pacemaker %s (Build: %s): %s\n", VERSION, BUILD_VERSION, CRM_FEATURES);
+        fprintf(stream, "Pacemaker %s (Build: %s): %s\n", PACEMAKER_VERSION, BUILD_VERSION, CRM_FEATURES);
         goto out;
     }
 
@@ -1820,6 +1822,8 @@ attrd_update_delegate(crm_ipc_t * ipc, char command, const char *host, const cha
 
         if (connected) {
             rc = crm_ipc_send(ipc, update, flags, 0, NULL);
+        } else {
+            crm_perror(LOG_INFO, "Connection to cluster attribute manager failed");
         }
 
         if (ipc != local_ipc) {
@@ -2326,9 +2330,10 @@ crm_md5sum(const char *buffer)
     char *digest = NULL;
     unsigned char raw_digest[MD5_DIGEST_SIZE];
 
-    if(buffer != NULL) {
-        len = strlen(buffer);
+    if (buffer == NULL) {
+        buffer = "";
     }
+    len = strlen(buffer);
 
     crm_trace("Beginning digest of %d bytes", len);
     digest = malloc(2 * MD5_DIGEST_SIZE + 1);

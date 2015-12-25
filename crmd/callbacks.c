@@ -99,6 +99,8 @@ crmd_ha_msg_filter(xmlNode * msg)
     trigger_fsa(fsa_source);
 }
 
+#define state_text(state) ((state)? (const char *)(state) : "in unknown state")
+
 void
 peer_update_callback(enum crm_status_type type, crm_node_t * node, const void *data)
 {
@@ -107,7 +109,14 @@ peer_update_callback(enum crm_status_type type, crm_node_t * node, const void *d
     bool appeared = FALSE;
     const char *status = NULL;
 
-    set_bit(fsa_input_register, R_PEER_DATA);
+    /* Crmd waits to receive some information from the membership layer before
+     * declaring itself operational. If this is being called for a cluster node,
+     * indicate that we have it.
+     */
+    if (!is_set(node->flags, crm_remote_node)) {
+        set_bit(fsa_input_register, R_PEER_DATA);
+    }
+
     if (node->uname == NULL) {
         return;
     }
@@ -115,42 +124,36 @@ peer_update_callback(enum crm_status_type type, crm_node_t * node, const void *d
     switch (type) {
         case crm_status_uname:
             /* If we've never seen the node, then it also wont be in the status section */
-            crm_info("%s is now %s", node->uname, node->state);
+            crm_info("%s is now %s", node->uname, state_text(node->state));
             return;
         case crm_status_rstate:
-            crm_info("Remote node %s is now %s (was %s)", node->uname, node->state, (const char *)data);
+            crm_info("Remote node %s is now %s (was %s)",
+                     node->uname, state_text(node->state), state_text(data));
             /* Keep going */
         case crm_status_nstate:
-            crm_info("%s is now %s (was %s)", node->uname, node->state, (const char *)data);
+            crm_info("%s is now %s (was %s)",
+                     node->uname, state_text(node->state), state_text(data));
+
             if (safe_str_eq(data, node->state)) {
                 /* State did not change */
                 return;
 
             } else if(safe_str_eq(CRM_NODE_MEMBER, node->state)) {
-                GListPtr gIter = stonith_cleanup_list;
-
                 appeared = TRUE;
-
-                while (gIter != NULL) {
-                    GListPtr tmp = gIter;
-                    char *target = tmp->data;
-
-                    gIter = gIter->next;
-                    if(safe_str_eq(node->uname, target)) {
-                        crm_trace("Removing %s from the cleanup list", target);
-                        stonith_cleanup_list = g_list_delete_link(stonith_cleanup_list, tmp);
-                        free(target);
-                    }
+                if (!is_set(node->flags, crm_remote_node)) {
+                    remove_stonith_cleanup(node->uname);
                 }
             }
+
+            crmd_notify_node_event(node);
             break;
+
         case crm_status_processes:
             if (data) {
                 old = *(const uint32_t *)data;
                 changed = node->processes ^ old;
             }
 
-            /* crmd_proc_update(node, proc_flags); */
             status = (node->processes & proc_flags) ? ONLINESTATUS : OFFLINESTATUS;
             crm_info("Client %s/%s now has status [%s] (DC=%s, changed=%6x)",
                      node->uname, peer2text(proc_flags), status,
@@ -206,19 +209,11 @@ peer_update_callback(enum crm_status_type type, crm_node_t * node, const void *d
         if (down) {
             const char *task = crm_element_value(down->xml, XML_LRM_ATTR_TASK);
 
-            if (alive && safe_str_eq(task, CRM_OP_FENCE)) {
-                crm_info("Node return implies stonith of %s (action %d) completed", node->uname,
-                         down->id);
+            if (safe_str_eq(task, CRM_OP_FENCE)) {
 
-                st_fail_count_reset(node->uname);
-
-                erase_status_tag(node->uname, XML_CIB_TAG_LRM, cib_scope_local);
-                erase_status_tag(node->uname, XML_TAG_TRANSIENT_NODEATTRS, cib_scope_local);
-                /* down->confirmed = TRUE; Only stonith-ng returning should imply completion */
-                down->sent_update = TRUE;       /* Prevent tengine_stonith_callback() from calling send_stonith_update() */
-
-            } else if (safe_str_eq(task, CRM_OP_FENCE)) {
-                crm_trace("Waiting for stonithd to report the fencing of %s is complete", node->uname); /* via tengine_stonith_callback() */
+                /* tengine_stonith_callback() confirms fence actions */
+                crm_trace("Updating CIB %s stonithd reported fencing of %s complete",
+                          (down->confirmed? "after" : "before"), node->uname);
 
             } else if (alive == FALSE) {
                 crm_notice("%s of %s (op %d) is complete", task, node->uname, down->id);

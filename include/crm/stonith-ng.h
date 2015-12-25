@@ -60,7 +60,6 @@ enum stonith_call_options {
     st_opt_report_only_success = 0x00004000,
 };
 
-#define stonith_default_options = stonith_none
 /*! Order matters here, do not change values */
 enum op_state
 {
@@ -315,6 +314,48 @@ typedef struct stonith_api_operations_s
      */
     int (*remove_callback)(stonith_t *st, int call_id, bool all_callbacks);
 
+    /*!
+     * \brief Remove fencing level for specific node, node regex or attribute
+     *
+     * \param[in] st      Stonithd connection to use
+     * \param[in] options Bitmask of stonith_call_options to pass to stonithd
+     * \param[in] node    If not NULL, target level by this node name
+     * \param[in] pattern If not NULL, target by node name using this regex
+     * \param[in] attr    If not NULL, target by this node attribute
+     * \param[in] value   If not NULL, target by this node attribute value
+     * \param[in] level   Index number of level to remove
+     *
+     * \return 0 on success, negative error code otherwise
+     *
+     * \note This feature is not available when stonith is in standalone mode.
+     *       The caller should set only one of node, pattern or attr/value.
+     */
+    int (*remove_level_full)(stonith_t *st, int options,
+                             const char *node, const char *pattern,
+                             const char *attr, const char *value, int level);
+
+    /*!
+     * \brief Register fencing level for specific node, node regex or attribute
+     *
+     * \param[in] st          Stonithd connection to use
+     * \param[in] options     Bitmask of stonith_call_options to pass to stonithd
+     * \param[in] node        If not NULL, target level by this node name
+     * \param[in] pattern     If not NULL, target by node name using this regex
+     * \param[in] attr        If not NULL, target by this node attribute
+     * \param[in] value       If not NULL, target by this node attribute value
+     * \param[in] level       Index number of level to add
+     * \param[in] device_list Devices to use in level
+     *
+     * \return 0 on success, negative error code otherwise
+     *
+     * \note This feature is not available when stonith is in standalone mode.
+     *       The caller should set only one of node, pattern or attr/value.
+     */
+    int (*register_level_full)(stonith_t *st, int options,
+                               const char *node, const char *pattern,
+                               const char *attr, const char *value,
+                               int level, stonith_key_value_t *device_list);
+
 } stonith_api_operations_t;
 
 struct stonith_s
@@ -352,7 +393,7 @@ int stonith_api_kick(uint32_t nodeid, const char *uname, int timeout, bool off);
 time_t stonith_api_time(uint32_t nodeid, const char *uname, bool in_progress);
 
 /*
- * Helpers for using the above functions without install-time dependancies
+ * Helpers for using the above functions without install-time dependencies
  *
  * Usage:
  *  #include <crm/stonith-ng.h>

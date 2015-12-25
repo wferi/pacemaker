@@ -204,16 +204,13 @@ set_format_string(int method, const char *daemon)
         }
     }
 
-    if (crm_tracing_enabled() && method >= QB_LOG_STDERR) {
-        offset += snprintf(fmt + offset, FMT_MAX - offset, "(%%-12f:%%5l %%g) %%-7p: %%n: ");
-    } else {
-        offset += snprintf(fmt + offset, FMT_MAX - offset, "%%g %%-7p: %%n: ");
-    }
-
     if (method == QB_LOG_SYSLOG) {
-        offset += snprintf(fmt + offset, FMT_MAX - offset, "%%b");
+        offset += snprintf(fmt + offset, FMT_MAX - offset, "%%g %%-7p: %%b");
+        crm_extended_logging(method, QB_FALSE);
+    } else if (crm_tracing_enabled()) {
+        offset += snprintf(fmt + offset, FMT_MAX - offset, "(%%-12f:%%5l %%g) %%-7p: %%n:\t%%b");
     } else {
-        offset += snprintf(fmt + offset, FMT_MAX - offset, "\t%%b");
+        offset += snprintf(fmt + offset, FMT_MAX - offset, "%%g %%-7p: %%n:\t%%b");
     }
 
     CRM_LOG_ASSERT(offset > 0);
@@ -931,24 +928,17 @@ crm_log_args(int argc, char **argv)
 {
     int lpc = 0;
     int len = 0;
-    int restore = FALSE;
     int existing_len = 0;
     int line = __LINE__;
     static int logged = 0;
 
     char *arg_string = NULL;
-    struct qb_log_callsite *args_cs =
-        qb_log_callsite_get(__func__, __FILE__, ARGS_FMT, LOG_NOTICE, line, 0);
 
     if (argc == 0 || argv == NULL || logged) {
         return;
     }
 
     logged = 1;
-    qb_bit_set(args_cs->targets, QB_LOG_SYSLOG);        /* Turn on syslog too */
-
-    restore = qb_log_ctl(QB_LOG_SYSLOG, QB_LOG_CONF_STATE_GET, 0);
-    qb_log_ctl(QB_LOG_SYSLOG, QB_LOG_CONF_ENABLED, QB_TRUE);
 
     for (; lpc < argc; lpc++) {
         if (argv[lpc] == NULL) {
@@ -961,7 +951,6 @@ crm_log_args(int argc, char **argv)
     }
 
     qb_log_from_external_source(__func__, __FILE__, ARGS_FMT, LOG_NOTICE, line, 0, arg_string);
-    qb_log_ctl(QB_LOG_SYSLOG, QB_LOG_CONF_ENABLED, restore);
 
     free(arg_string);
 }

@@ -289,6 +289,9 @@ attrd_client_update(xmlNode *xml)
 
             crm_info("Expanded %s=%s to %d", attr, value, int_value);
             crm_xml_add_int(xml, F_ATTRD_VALUE, int_value);
+
+            /* Replacing the value frees the previous memory, so re-query it */
+            value = crm_element_value(xml, F_ATTRD_VALUE);
         }
     }
 
@@ -598,10 +601,8 @@ attrd_peer_remove(uint32_t nodeid, const char *host, gboolean uncache, const cha
         }
     }
 
-    /* if this matches a remote peer, it will be removed from the cache */
-    crm_remote_peer_cache_remove(host);
-
     if (uncache) {
+        crm_remote_peer_cache_remove(host);
         reap_crm_member(nodeid, host);
     }
 }
@@ -762,27 +763,23 @@ attrd_election_cb(gpointer user_data)
 void
 attrd_peer_change_cb(enum crm_status_type kind, crm_node_t *peer, const void *data)
 {
-    if(election_state(writer) == election_won
-        && kind == crm_status_nstate
-        && safe_str_eq(peer->state, CRM_NODE_MEMBER)) {
-
-        attrd_peer_sync(peer, NULL);
-
-    } else if(kind == crm_status_nstate
-              && safe_str_neq(peer->state, CRM_NODE_MEMBER)) {
-
-        attrd_peer_remove(peer->id, peer->uname, FALSE, __FUNCTION__);
-        if(peer_writer && safe_str_eq(peer->uname, peer_writer)) {
-            free(peer_writer);
-            peer_writer = NULL;
-            crm_notice("Lost attribute writer %s", peer->uname);
-        }
-
-    } else if(kind == crm_status_processes) {
-        if(is_set(peer->processes, crm_proc_cpg)) {
-            crm_update_peer_state(__FUNCTION__, peer, CRM_NODE_MEMBER, 0);
+    if ((kind == crm_status_nstate) || (kind == crm_status_rstate)) {
+        if (safe_str_eq(peer->state, CRM_NODE_MEMBER)) {
+            /* If we're the writer, send new peers a list of all attributes
+             * (unless it's a remote node, which doesn't run its own attrd)
+             */
+            if ((election_state(writer) == election_won)
+                && !is_set(peer->flags, crm_remote_node)) {
+                attrd_peer_sync(peer, NULL);
+            }
         } else {
-            crm_update_peer_state(__FUNCTION__, peer, CRM_NODE_LOST, 0);
+            /* Remove all attribute values associated with lost nodes */
+            attrd_peer_remove(peer->id, peer->uname, FALSE, __FUNCTION__);
+            if (peer_writer && safe_str_eq(peer->uname, peer_writer)) {
+                free(peer_writer);
+                peer_writer = NULL;
+                crm_notice("Lost attribute writer %s", peer->uname);
+            }
         }
     }
 }
@@ -840,7 +837,6 @@ attrd_cib_callback(xmlNode * msg, int call_id, int rc, xmlNode * output, void *u
         }
     }
   done:
-    free(name);
     if(a && a->changed && election_state(writer) == election_won) {
         write_attribute(a);
     }
@@ -966,7 +962,7 @@ write_attribute(attribute_t *a)
     /* Iterate over each peer value of this attribute */
     g_hash_table_iter_init(&iter, a->values);
     while (g_hash_table_iter_next(&iter, NULL, (gpointer *) & v)) {
-        crm_node_t *peer = crm_get_peer_full(v->nodeid, v->nodename, CRM_GET_PEER_REMOTE|CRM_GET_PEER_CLUSTER);
+        crm_node_t *peer = crm_get_peer_full(v->nodeid, v->nodename, CRM_GET_PEER_ANY);
 
         /* If the value's peer info does not correspond to a peer, ignore it */
         if (peer == NULL) {
@@ -1027,8 +1023,10 @@ write_attribute(attribute_t *a)
         crm_info("Sent update %d with %d changes for %s, id=%s, set=%s",
                  a->update, cib_updates, a->id, (a->uuid? a->uuid : "<n/a>"), a->set);
 
-        the_cib->cmds->register_callback(
-            the_cib, a->update, 120, FALSE, strdup(a->id), "attrd_cib_callback", attrd_cib_callback);
+        the_cib->cmds->register_callback_full(the_cib, a->update, 120, FALSE,
+                                              strdup(a->id),
+                                              "attrd_cib_callback",
+                                              attrd_cib_callback, free);
     }
     free_xml(xml_top);
 }

@@ -49,6 +49,11 @@ crm_update_peer_join(const char *source, crm_node_t * node, enum crm_join_phase 
         return;
     }
 
+    /* Remote nodes do not participate in joins */
+    if (is_set(node->flags, crm_remote_node)) {
+        return;
+    }
+
     last = node->join;
 
     if(phase == last) {
@@ -452,8 +457,6 @@ finalize_sync_callback(xmlNode * msg, int call_id, int rc, xmlNode * output, voi
         crm_debug("No longer the DC in S_FINALIZE_JOIN: %s/%s",
                   AM_I_DC ? "DC" : "CRMd", fsa_state2string(fsa_state));
     }
-
-    free(user_data);
 }
 
 static void

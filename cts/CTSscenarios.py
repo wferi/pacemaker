@@ -124,7 +124,7 @@ A partially set up scenario is torn down if it fails during setup.
 
     def incr(self, name):
         '''Increment (or initialize) the value associated with the given name'''
-        if not self.Stats.has_key(name):
+        if not name in self.Stats:
             self.Stats[name] = 0
         self.Stats[name] = self.Stats[name]+1
 
@@ -166,7 +166,13 @@ A partially set up scenario is torn down if it fails during setup.
 
         if not test.teardown(nodechoice):
             self.ClusterManager.log("Teardown failed")
-            answer = raw_input('Continue? [nY] ')
+            if self.ClusterManager.Env["continue"] == 1:
+                answer = "Y"
+            else:
+                try:
+                    answer = raw_input('Continue? [nY]')
+                except EOFError, e:
+                    answer = "n"
             if answer and answer == "n":
                 raise ValueError("Teardown of %s on %s failed" % (test.name, nodechoice))
             ret = 0
@@ -176,7 +182,7 @@ A partially set up scenario is torn down if it fails during setup.
 
         elapsed_time = stoptime - starttime
         test_time = stoptime - test.get_timer()
-        if not test.has_key("min_time"):
+        if not test["min_time"]:
             test["elapsed_time"] = elapsed_time
             test["min_time"] = test_time
             test["max_time"] = test_time
@@ -193,7 +199,7 @@ A partially set up scenario is torn down if it fails during setup.
         else:
             self.incr("failure")
             self.ClusterManager.statall()
-            did_run = 1  # Force the test count to be incrimented anyway so test extraction works
+            did_run = 1  # Force the test count to be incremented anyway so test extraction works
 
         self.audit(test.errorstoignore())
         return did_run
@@ -211,7 +217,7 @@ A partially set up scenario is torn down if it fails during setup.
             }
         self.ClusterManager.log("Test Summary")
         for test in self.Tests:
-            for key in stat_filter.keys():
+            for key in list(stat_filter.keys()):
                 stat_filter[key] = test.Stats[key]
             self.ClusterManager.log(("Test %s: "%test.name).ljust(25) + " %s"%repr(stat_filter))
 
@@ -255,7 +261,13 @@ A partially set up scenario is torn down if it fails during setup.
             else:
                 break
         else:
-            answer = raw_input('Big problems.  Continue? [nY]')
+            if self.ClusterManager.Env["continue"] == 1:
+                answer = "Y"
+            else:
+                try:
+                    answer = raw_input('Big problems. Continue? [nY]')
+                except EOFError, e:
+                    answer = "n"
             if answer and answer == "n":
                 self.ClusterManager.log("Shutting down.")
                 self.summarize()
@@ -387,7 +399,7 @@ According to the manual page for ping:
         '''Start the PingFest!'''
 
         self.PingSize = 1024
-        if CM.Env.has_key("PingSize"):
+        if "PingSize" in CM.Env.keys():
                 self.PingSize = CM.Env["PingSize"]
 
         CM.log("Starting %d byte flood pings" % self.PingSize)
@@ -550,7 +562,7 @@ Test a rolling upgrade between two versions of the stack
         return self.install(node, self.CM.Env["previous-version"])
 
     def SetUp(self, CM):
-        print repr(self)+"prepare"
+        print(repr(self)+"prepare")
         CM.prepare()
 
         # Clear out the cobwebs

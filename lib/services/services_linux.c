@@ -47,6 +47,9 @@
 #  include "crm/common/cib_secrets.h"
 #endif
 
+/* ops currently active (in-flight) */
+extern GList *inflight_ops;
+
 static inline void
 set_fd_opts(int fd, int opts)
 {
@@ -220,7 +223,7 @@ recurring_action_timer(gpointer data)
 {
     svc_action_t *op = data;
 
-    crm_debug("Scheduling another invokation of %s", op->id);
+    crm_debug("Scheduling another invocation of %s", op->id);
 
     /* Clean out the old result */
     free(op->stdout_data);
@@ -255,6 +258,10 @@ operation_finalize(svc_action_t * op)
     }
 
     op->pid = 0;
+
+    inflight_ops = g_list_remove(inflight_ops, op);
+
+    handle_blocked_ops();
 
     if (!recurring && op->synchronous == FALSE) {
         /*
@@ -582,7 +589,8 @@ action_synced_wait(svc_action_t * op, sigset_t mask)
 
 }
 
-/* Returns FALSE if 'op' should be free'd by the caller */
+/* For an asynchronous 'op', returns FALSE if 'op' should be free'd by the caller */
+/* For a synchronous 'op', returns FALSE if 'op' fails */
 gboolean
 services_os_action_execute(svc_action_t * op, gboolean synchronous)
 {
@@ -695,6 +703,8 @@ services_os_action_execute(svc_action_t * op, gboolean synchronous)
         op->opaque->stderr_gsource = mainloop_add_fd(op->id,
                                                      G_PRIORITY_LOW,
                                                      op->opaque->stderr_fd, op, &stderr_callbacks);
+
+        services_add_inflight_op(op);
     }
 
     return TRUE;
