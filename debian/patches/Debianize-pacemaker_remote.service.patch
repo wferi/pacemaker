@@ -8,13 +8,13 @@ Source /etc/default/pacemaker_remote if exists.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/lrmd/pacemaker_remote.service.in b/lrmd/pacemaker_remote.service.in
-index c045a6d..2236aeb 100644
+index 15e61fb..0e60414 100644
 --- a/lrmd/pacemaker_remote.service.in
 +++ b/lrmd/pacemaker_remote.service.in
-@@ -10,7 +10,7 @@ Type=simple
+@@ -9,7 +9,7 @@ WantedBy=multi-user.target
+ Type=simple
  KillMode=process
  NotifyAccess=none
- SysVStartPriority=99
 -EnvironmentFile=-/etc/sysconfig/pacemaker
 +EnvironmentFile=-/etc/default/pacemaker_remote
  

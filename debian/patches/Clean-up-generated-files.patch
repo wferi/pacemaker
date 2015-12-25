@@ -17,7 +17,7 @@ pengine, which is handled specially.
  8 files changed, 17 insertions(+), 15 deletions(-)
 
 diff --git a/crmd/Makefile.am b/crmd/Makefile.am
-index 8e5e1df..6f9bbad 100644
+index 984f5d0..c28da0b 100644
 --- a/crmd/Makefile.am
 +++ b/crmd/Makefile.am
 @@ -52,9 +52,6 @@ if BUILD_XML_HELP
@@ -37,7 +37,7 @@ index 8e5e1df..6f9bbad 100644
 +
 +CLEANFILES = $(man7_MANS)
 diff --git a/doc/Makefile.am b/doc/Makefile.am
-index d80d61c..ece4d8d 100644
+index 3077276..f4c836d 100644
 --- a/doc/Makefile.am
 +++ b/doc/Makefile.am
 @@ -38,9 +38,10 @@ DOCBOOK_LANGS   := en-US
@@ -53,15 +53,14 @@ index d80d61c..ece4d8d 100644
  	Pacemaker_Remote/en-US/images/pcmk-ha-cluster-stack.png \
  	Pacemaker_Remote/en-US/images/pcmk-ha-remote-stack.png
  
-@@ -187,7 +188,7 @@ if BUILD_DOCBOOK
+@@ -200,6 +201,6 @@ if BUILD_DOCBOOK
  endif
  
  clean-local:
--	-rm -rf $(generated_docs) $(generated_mans) $(docbook_build) $(CFS_XML) $(PE_XML) $(PR_XML) ../xsl
-+	-rm -rf $(generated_docs) $(generated_mans) $(docbook_build) $(CFS_XML) $(PE_XML) $(PR_XML) ../xsl $(generated_PNGS)
+-	-rm -rf $(generated_docs) $(generated_mans) $(docbook_build) ../xsl
++	-rm -rf $(generated_docs) $(generated_mans) $(docbook_build) ../xsl $(generated_PNGS)
+ 	-rm -rf $(SHARED_XML) $(CFS_XML) $(PE_XML) $(PR_XML)
  	for book in $(docbook); do rm -rf $$book/tmp $$book/publish; done
- 
- foo:
 diff --git a/fencing/Makefile.am b/fencing/Makefile.am
 index f422e82..383c217 100644
 --- a/fencing/Makefile.am
@@ -73,7 +72,7 @@ index f422e82..383c217 100644
 +
 +CLEANFILES = $(man7_MANS) $(man8_MANS)
 diff --git a/lrmd/Makefile.am b/lrmd/Makefile.am
-index 57d7810..3a45024 100644
+index 6d061de..a8fb07a 100644
 --- a/lrmd/Makefile.am
 +++ b/lrmd/Makefile.am
 @@ -61,3 +61,5 @@ lrmd_test_LDADD		= $(top_builddir)/lib/common/libcrmcommon.la	\
@@ -96,7 +95,7 @@ index c3caf19..1b3720a 100644
 +
 +CLEANFILES = $(man8_MANS)
 diff --git a/pengine/Makefile.am b/pengine/Makefile.am
-index 8274076..b200d5c 100644
+index d44178f..95d639e 100644
 --- a/pengine/Makefile.am
 +++ b/pengine/Makefile.am
 @@ -82,5 +82,5 @@ install-exec-local:
@@ -108,7 +107,7 @@ index 8274076..b200d5c 100644
 +clean-local:
 +	rm -f test10/*.pe.* $(man7_MANS)
 diff --git a/tools/Makefile.am b/tools/Makefile.am
-index f6bf768..71f308f 100644
+index b43130e..555b1db 100644
 --- a/tools/Makefile.am
 +++ b/tools/Makefile.am
 @@ -143,11 +143,10 @@ ipmiservicelogd_CFLAGS	= $(OPENIPMI_SERVICELOG_CFLAGS) $(SERVICELOG_CFLAGS)

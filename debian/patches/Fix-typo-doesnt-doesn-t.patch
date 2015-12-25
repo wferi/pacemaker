@@ -27,12 +27,12 @@ index e9adaaa..a28e0d2 100644
      CRM_LOG_ASSERT(*output == NULL);
      return pcmk_ok;
 diff --git a/cts/CTStests.py b/cts/CTStests.py
-index d2b7668..e240861 100644
+index e6f3abe..7599bf3 100644
 --- a/cts/CTStests.py
 +++ b/cts/CTStests.py
-@@ -1433,7 +1433,7 @@ class ComponentFail(CTSTest):
+@@ -1446,7 +1446,7 @@ class ComponentFail(CTSTest):
                      if r.rclass == "stonith":
-                         self.okerrpatterns.append(self.templates["LogActions: Recover.*%s"] % r.id)
+                         self.okerrpatterns.append(self.templates["Pat:Fencing_recover"] % r.id)
  
 -        # supply a copy so self.patterns doesnt end up empty
 +        # supply a copy so self.patterns doesn't end up empty
@@ -62,7 +62,7 @@ index 52b584a..403845c 100644
  	fi	
  }
 diff --git a/include/crm/common/xml.h b/include/crm/common/xml.h
-index 968c922..76c6e8c 100644
+index 0c21eca..a1adf3d 100644
 --- a/include/crm/common/xml.h
 +++ b/include/crm/common/xml.h
 @@ -64,7 +64,7 @@ xmlDoc *getDocPtr(xmlNode * node);
@@ -75,7 +75,7 @@ index 968c922..76c6e8c 100644
   * Copy all the attributes/properties from src into target.
   *
 diff --git a/lib/pengine/native.c b/lib/pengine/native.c
-index f31fd15..b36a11e 100644
+index 86acada..5039fef 100644
 --- a/lib/pengine/native.c
 +++ b/lib/pengine/native.c
 @@ -76,7 +76,7 @@ native_add_running(resource_t * rsc, node_t * node, pe_working_set_t * data_set)
@@ -88,10 +88,10 @@ index f31fd15..b36a11e 100644
                      rsc->allowed_nodes = node_hash_from_list(data_set->nodes);
                      g_hash_table_iter_init(&gIter, rsc->allowed_nodes);
 diff --git a/lib/pengine/unpack.c b/lib/pengine/unpack.c
-index 7bb8366..3155577 100644
+index c149f49..c609a3a 100644
 --- a/lib/pengine/unpack.c
 +++ b/lib/pengine/unpack.c
-@@ -2633,7 +2633,7 @@ unpack_rsc_op_failure(resource_t *rsc, node_t *node, int rc, xmlNode *xml_op, en
+@@ -2655,7 +2655,7 @@ unpack_rsc_op_failure(resource_t *rsc, node_t *node, int rc, xmlNode *xml_op, en
              }
          }
          crm_warn("Making sure %s doesn't come up again", fail_rsc->id);
@@ -101,7 +101,7 @@ index 7bb8366..3155577 100644
          fail_rsc->allowed_nodes = node_hash_from_list(data_set->nodes);
          g_hash_table_foreach(fail_rsc->allowed_nodes, set_node_score, &score);
 diff --git a/lib/pengine/utils.c b/lib/pengine/utils.c
-index f5789b6..62e9421 100644
+index 49292fc..eadfd79 100644
 --- a/lib/pengine/utils.c
 +++ b/lib/pengine/utils.c
 @@ -512,7 +512,7 @@ custom_action(resource_t * rsc, char *key, const char *task,
@@ -113,7 +113,7 @@ index f5789b6..62e9421 100644
              pe_set_action_bit(action, pe_action_runnable);
  #if 0
              /*
-@@ -1345,7 +1345,7 @@ sort_op_by_callid(gconstpointer a, gconstpointer b)
+@@ -1353,7 +1353,7 @@ sort_op_by_callid(gconstpointer a, gconstpointer b)
      crm_element_value_const_int(xml_b, XML_LRM_ATTR_CALLID, &b_call_id);
  
      if (a_call_id == -1 && b_call_id == -1) {
@@ -122,7 +122,7 @@ index f5789b6..62e9421 100644
           *   stops are never pending
           */
          sort_return(0, "pending");
-@@ -1405,7 +1405,7 @@ sort_op_by_callid(gconstpointer a, gconstpointer b)
+@@ -1413,7 +1413,7 @@ sort_op_by_callid(gconstpointer a, gconstpointer b)
              /*
               * some of the logic in here may be redundant...
               *
@@ -132,7 +132,7 @@ index f5789b6..62e9421 100644
               * pending operations dont survive between elections and joins
               *   because we query the LRM directly
 diff --git a/pengine/native.c b/pengine/native.c
-index 0a97aaa..935aede 100644
+index 64cd18f..4a81def 100644
 --- a/pengine/native.c
 +++ b/pengine/native.c
 @@ -468,7 +468,7 @@ native_color(resource_t * rsc, node_t * prefer, pe_working_set_t * data_set)

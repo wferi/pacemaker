@@ -2,24 +2,25 @@ From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
 Date: Mon, 21 Dec 2015 18:04:02 +0100
 Subject: Libraries go after linker flags
 
-These ensure that -Wl,--as-needed is effective for the stack libraries.
+Ensure that options like -Wl,--as-needed are effective for the stack
+libraries.
 ---
  lib/cluster/Makefile.am |    4 ++--
  mcp/Makefile.am         |    2 +-
  2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/lib/cluster/Makefile.am b/lib/cluster/Makefile.am
-index 29413ba..14429ea 100644
+index 29daeb2..c063340 100644
 --- a/lib/cluster/Makefile.am
 +++ b/lib/cluster/Makefile.am
 @@ -28,8 +28,8 @@ header_HEADERS =
  lib_LTLIBRARIES	= libcrmcluster.la 
  
  libcrmcluster_la_SOURCES = election.c cluster.c membership.c
--libcrmcluster_la_LDFLAGS = -version-info 4:2:0 $(CLUSTERLIBS) 
+-libcrmcluster_la_LDFLAGS = -version-info 5:0:1 $(CLUSTERLIBS) 
 -libcrmcluster_la_LIBADD  = $(top_builddir)/lib/common/libcrmcommon.la $(top_builddir)/lib/fencing/libstonithd.la
-+libcrmcluster_la_LDFLAGS = -version-info 4:2:0
-+libcrmcluster_la_LIBADD  = $(top_builddir)/lib/common/libcrmcommon.la $(top_builddir)/lib/fencing/libstonithd.la $(CLUSTERLIBS) 
++libcrmcluster_la_LDFLAGS = -version-info 5:0:1
++libcrmcluster_la_LIBADD  = $(top_builddir)/lib/common/libcrmcommon.la $(top_builddir)/lib/fencing/libstonithd.la $(CLUSTERLIBS)
  libcrmcluster_la_DEPENDENCIES = $(top_builddir)/lib/common/libcrmcommon.la $(top_builddir)/lib/fencing/libstonithd.la 
  
  if BUILD_CS_SUPPORT

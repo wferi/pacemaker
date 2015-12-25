@@ -7,7 +7,7 @@ Subject: Debianize crm_mon.service
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tools/crm_mon.service.in b/tools/crm_mon.service.in
-index 3717824..eefb1b2 100644
+index 0c7e8f1..d9976d8 100644
 --- a/tools/crm_mon.service.in
 +++ b/tools/crm_mon.service.in
 @@ -3,7 +3,7 @@ Description=Daemon for pacemaker monitor

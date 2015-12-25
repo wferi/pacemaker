@@ -4,19 +4,20 @@ Subject: Restarting pacemaker adds confusion only
 
 Usually fencing is imminent anyway.
 ---
- mcp/pacemaker.service.in |    2 --
- 1 file changed, 2 deletions(-)
+ mcp/pacemaker.service.in |    3 ---
+ 1 file changed, 3 deletions(-)
 
 diff --git a/mcp/pacemaker.service.in b/mcp/pacemaker.service.in
-index b682779..36f5c2e 100644
+index 9b0a824..a45b380 100644
 --- a/mcp/pacemaker.service.in
 +++ b/mcp/pacemaker.service.in
-@@ -54,8 +54,6 @@ SendSIGKILL=no
+@@ -53,9 +53,6 @@ SendSIGKILL=no
  TimeoutStopSec=30min
  TimeoutStartSec=60s
  
 -# Restart options include: no, on-success, on-failure, on-abort or always
 -Restart=on-failure
- # if you use crm_mon, uncomment the line below.
- # ExecStopPost=/bin/sh -c 'systemctl status crm_mon >/dev/null && systemctl stop crm_mon'
- 
+-
+ # crm_perror() writes directly to stderr, so ignore it here
+ # to avoid double-logging with the wrong format
+ StandardError=null
