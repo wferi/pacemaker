@@ -373,7 +373,10 @@ cib_process_modify(const char *op, int options, const char *section, xmlNode * r
 
         for (lpc = 0; lpc < max; lpc++) {
             xmlNode *match = getXpathResult(xpathObj, lpc);
-            crm_debug("Destroying %s", (char *)xmlGetNodePath(match));
+            xmlChar *match_path = xmlGetNodePath(match);
+
+            crm_debug("Destroying %s", match_path);
+            free(match_path);
             free_xml(match);
         }
 
@@ -607,6 +610,7 @@ cib_config_changed(xmlNode * last, xmlNode * next, xmlNode ** diff)
     int lpc = 0, max = 0;
     gboolean config_changes = FALSE;
     xmlXPathObject *xpathObj = NULL;
+    int format = 1;
 
     CRM_ASSERT(diff != NULL);
 
@@ -617,6 +621,10 @@ cib_config_changed(xmlNode * last, xmlNode * next, xmlNode ** diff)
     if (*diff == NULL) {
         goto done;
     }
+
+    crm_element_value_int(*diff, "format", &format);
+    /* This function only applies to v1 diffs. */
+    CRM_LOG_ASSERT(format == 1);
 
     xpathObj = xpath_search(*diff, "//" XML_CIB_TAG_CONFIGURATION);
     if (numXpathResults(xpathObj) > 0) {
@@ -702,6 +710,10 @@ cib_process_xpath(const char *op, int options, const char *section, xmlNode * re
         }
     }
 
+    if (safe_str_eq(op, CIB_OP_DELETE) && (options & cib_multiple)) {
+        dedupXpathResults(xpathObj);
+    }
+
     for (lpc = 0; lpc < max; lpc++) {
         xmlChar *path = NULL;
         xmlNode *match = getXpathResult(xpathObj, lpc);
@@ -715,6 +727,13 @@ cib_process_xpath(const char *op, int options, const char *section, xmlNode * re
         free(path);
 
         if (safe_str_eq(op, CIB_OP_DELETE)) {
+            if (match == *result_cib) {
+                /* Attempting to delete the whole "/cib" */
+                crm_warn("Cannot perform %s for %s: The xpath is addressing the whole /cib", op, section);
+                rc = -EINVAL;
+                break;
+            }
+
             free_xml(match);
             if ((options & cib_multiple) == 0) {
                 break;

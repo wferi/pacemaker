@@ -78,6 +78,14 @@ systemd_init(void)
     static int need_init = 1;
     /* http://dbus.freedesktop.org/doc/api/html/group__DBusConnection.html */
 
+    if (systemd_proxy
+        && dbus_connection_get_is_connected(systemd_proxy) == FALSE) {
+        crm_warn("Connection to System DBus is closed. Reconnecting...");
+        pcmk_dbus_disconnect(systemd_proxy);
+        systemd_proxy = NULL;
+        need_init = 1;
+    }
+
     if (need_init) {
         need_init = 0;
         systemd_proxy = pcmk_dbus_connect();
@@ -138,7 +146,7 @@ systemd_daemon_reload_complete(DBusPendingCall *pending, void *user_data)
 }
 
 static bool
-systemd_daemon_reload(void)
+systemd_daemon_reload(int timeout)
 {
     static unsigned int reload_count = 0;
     const char *method = "Reload";
@@ -149,20 +157,46 @@ systemd_daemon_reload(void)
         DBusMessage *msg = systemd_new_method(BUS_NAME".Manager", method);
 
         CRM_ASSERT(msg != NULL);
-        pcmk_dbus_send(msg, systemd_proxy, systemd_daemon_reload_complete, GUINT_TO_POINTER(reload_count));
+        pcmk_dbus_send(msg, systemd_proxy, systemd_daemon_reload_complete, GUINT_TO_POINTER(reload_count), timeout);
         dbus_message_unref(msg);
     }
     return TRUE;
+}
+
+static bool
+systemd_mask_error(svc_action_t *op, const char *error)
+{
+    crm_trace("Could not issue %s for %s: %s", op->action, op->rsc, error);
+    if(strstr(error, "org.freedesktop.systemd1.InvalidName")
+       || strstr(error, "org.freedesktop.systemd1.LoadFailed")
+       || strstr(error, "org.freedesktop.systemd1.NoSuchUnit")) {
+
+        if (safe_str_eq(op->action, "stop")) {
+            crm_trace("Masking %s failure for %s: unknown services are stopped", op->action, op->rsc);
+            op->rc = PCMK_OCF_OK;
+            return TRUE;
+
+        } else {
+            crm_trace("Mapping %s failure for %s: unknown services are not installed", op->action, op->rsc);
+            op->rc = PCMK_OCF_NOT_INSTALLED;
+            op->status = PCMK_LRM_OP_NOT_INSTALLED;
+            return FALSE;
+        }
+    }
+
+    return FALSE;
 }
 
 static const char *
 systemd_loadunit_result(DBusMessage *reply, svc_action_t * op)
 {
     const char *path = NULL;
+    DBusError error;
 
-    if(pcmk_dbus_find_error("LoadUnit", (void*)&path, reply, NULL)) {
-        if(op) {
-            crm_warn("No unit found for %s", op->rsc);
+    if(pcmk_dbus_find_error("LoadUnit", (void*)&path, reply, &error)) {
+        if(op && !systemd_mask_error(op, error.name)) {
+            crm_err("Could not find unit %s for %s: LoadUnit error '%s'",
+                    op->agent, op->id, error.name);
         }
 
     } else if(pcmk_dbus_type_check(reply, NULL, DBUS_TYPE_OBJECT_PATH, __FUNCTION__, __LINE__)) {
@@ -172,7 +206,12 @@ systemd_loadunit_result(DBusMessage *reply, svc_action_t * op)
     }
 
     if(op) {
-        systemd_unit_exec_with_unit(op, path);
+        if (path) {
+            systemd_unit_exec_with_unit(op, path);
+
+        } else if (op->synchronous == FALSE) {
+            operation_finalize(op);
+        }
     }
 
     return path;
@@ -189,16 +228,13 @@ systemd_loadunit_cb(DBusPendingCall *pending, void *user_data)
         reply = dbus_pending_call_steal_reply(pending);
     }
 
-    if(op) {
-        crm_trace("Got result: %p for %p for %s, %s", reply, pending, op->rsc, op->action);
-    } else {
-        crm_trace("Got result: %p for %p", reply, pending);
-    }
+    crm_trace("Got result: %p for %p / %p for %s", reply, pending, op->opaque->pending, op->id);
+
+    CRM_LOG_ASSERT(pending == op->opaque->pending);
+    services_set_op_pending(op, NULL);
+
     systemd_loadunit_result(reply, user_data);
 
-    if(pending) {
-        dbus_pending_call_unref(pending);
-    }
     if(reply) {
         dbus_message_unref(reply);
     }
@@ -209,6 +245,7 @@ systemd_unit_by_name(const gchar * arg_name, svc_action_t *op)
 {
     DBusMessage *msg;
     DBusMessage *reply = NULL;
+    DBusPendingCall* pending = NULL;
     char *name = NULL;
 
 /*
@@ -236,7 +273,7 @@ systemd_unit_by_name(const gchar * arg_name, svc_action_t *op)
         DBusError error;
 
         dbus_error_init(&error);
-        reply = pcmk_dbus_send_recv(msg, systemd_proxy, &error);
+        reply = pcmk_dbus_send_recv(msg, systemd_proxy, &error, op? op->timeout : DBUS_TIMEOUT_USE_DEFAULT);
         dbus_message_unref(msg);
 
         unit = systemd_loadunit_result(reply, op);
@@ -249,7 +286,11 @@ systemd_unit_by_name(const gchar * arg_name, svc_action_t *op)
         return munit;
     }
 
-    pcmk_dbus_send(msg, systemd_proxy, systemd_loadunit_cb, op);
+    pending = pcmk_dbus_send(msg, systemd_proxy, systemd_loadunit_cb, op, op->timeout);
+    if(pending) {
+        services_set_op_pending(op, pending);
+    }
+
     dbus_message_unref(msg);
     return NULL;
 }
@@ -281,7 +322,7 @@ systemd_unit_listall(void)
     msg = systemd_new_method(BUS_NAME".Manager", method);
     CRM_ASSERT(msg != NULL);
 
-    reply = pcmk_dbus_send_recv(msg, systemd_proxy, &error);
+    reply = pcmk_dbus_send_recv(msg, systemd_proxy, &error, DBUS_TIMEOUT_USE_DEFAULT);
     dbus_message_unref(msg);
 
     if(error.name) {
@@ -355,7 +396,7 @@ systemd_unit_exists(const char *name)
 }
 
 static char *
-systemd_unit_metadata(const char *name)
+systemd_unit_metadata(const char *name, int timeout)
 {
     char *meta = NULL;
     char *desc = NULL;
@@ -363,7 +404,7 @@ systemd_unit_metadata(const char *name)
 
     if (path) {
         /* TODO: Worth a making blocking call for? Probably not. Possibly if cached. */
-        desc = pcmk_dbus_get_property(systemd_proxy, BUS_NAME, path, BUS_NAME ".Unit", "Description", NULL, NULL, NULL);
+        desc = pcmk_dbus_get_property(systemd_proxy, BUS_NAME, path, BUS_NAME ".Unit", "Description", NULL, NULL, NULL, timeout);
     } else {
         desc = crm_strdup_printf("Systemd unit file for %s", name);
     }
@@ -379,11 +420,10 @@ systemd_unit_metadata(const char *name)
                            "  <parameters>\n"
                            "  </parameters>\n"
                            "  <actions>\n"
-                           "    <action name=\"start\"   timeout=\"15\" />\n"
-                           "    <action name=\"stop\"    timeout=\"15\" />\n"
-                           "    <action name=\"status\"  timeout=\"15\" />\n"
-                           "    <action name=\"restart\"  timeout=\"15\" />\n"
-                           "    <action name=\"monitor\" timeout=\"15\" interval=\"15\" start-delay=\"15\" />\n"
+                           "    <action name=\"start\"   timeout=\"100\" />\n"
+                           "    <action name=\"stop\"    timeout=\"100\" />\n"
+                           "    <action name=\"status\"  timeout=\"100\" />\n"
+                           "    <action name=\"monitor\" timeout=\"100\" interval=\"60\"/>\n"
                            "    <action name=\"meta-data\"  timeout=\"5\" />\n"
                            "  </actions>\n"
                            "  <special tag=\"systemd\">\n"
@@ -391,29 +431,6 @@ systemd_unit_metadata(const char *name)
     free(desc);
     free(path);
     return meta;
-}
-
-static bool
-systemd_mask_error(svc_action_t *op, const char *error)
-{
-    crm_trace("Could not issue %s for %s: %s", op->action, op->rsc, error);
-    if(strstr(error, "org.freedesktop.systemd1.InvalidName")
-       || strstr(error, "org.freedesktop.systemd1.LoadFailed")
-       || strstr(error, "org.freedesktop.systemd1.NoSuchUnit")) {
-
-        if (safe_str_eq(op->action, "stop")) {
-            crm_trace("Masking %s failure for %s: unknown services are stopped", op->action, op->rsc);
-            op->rc = PCMK_OCF_OK;
-
-        } else {
-            crm_trace("Mapping %s failure for %s: unknown services are not installed", op->action, op->rsc);
-            op->rc = PCMK_OCF_NOT_INSTALLED;
-            op->status = PCMK_LRM_OP_NOT_INSTALLED;
-        }
-        return TRUE;
-    }
-
-    return FALSE;
 }
 
 static void
@@ -425,7 +442,7 @@ systemd_exec_result(DBusMessage *reply, svc_action_t *op)
 
         /* ignore "already started" or "not running" errors */
         if (!systemd_mask_error(op, error.name)) {
-            crm_err("Could not issue %s for %s: %s (%s)", op->action, op->rsc, error.message);
+            crm_err("Could not issue %s for %s: %s", op->action, op->rsc, error.message);
         }
 
     } else {
@@ -459,18 +476,12 @@ systemd_async_dispatch(DBusPendingCall *pending, void *user_data)
         reply = dbus_pending_call_steal_reply(pending);
     }
 
-    if(op) {
-        crm_trace("Got result: %p for %p for %s, %s", reply, pending, op->rsc, op->action);
-        op->opaque->pending = NULL;
-        systemd_exec_result(reply, op);
+    crm_trace("Got result: %p for %p for %s, %s", reply, pending, op->rsc, op->action);
 
-    } else {
-        crm_trace("Got result: %p for %p", reply, pending);
-    }
+    CRM_LOG_ASSERT(pending == op->opaque->pending);
+    services_set_op_pending(op, NULL);
+    systemd_exec_result(reply, op);
 
-    if(pending) {
-        dbus_pending_call_unref(pending);
-    }
     if(reply) {
         dbus_message_unref(reply);
     }
@@ -499,10 +510,7 @@ systemd_unit_check(const char *name, const char *state, void *userdata)
     }
 
     if (op->synchronous == FALSE) {
-        if (op->opaque->pending) {
-            dbus_pending_call_unref(op->opaque->pending);
-        }
-        op->opaque->pending = NULL;
+        services_set_op_pending(op, NULL);
         operation_finalize(op);
     }
 }
@@ -516,13 +524,6 @@ systemd_unit_exec_with_unit(svc_action_t * op, const char *unit)
 
     CRM_ASSERT(unit);
 
-    if (unit == NULL) {
-        crm_debug("Could not obtain unit named '%s'", op->agent);
-        op->rc = PCMK_OCF_NOT_INSTALLED;
-        op->status = PCMK_LRM_OP_NOT_INSTALLED;
-        goto cleanup;
-    }
-
     if (safe_str_eq(op->action, "monitor") || safe_str_eq(method, "status")) {
         DBusPendingCall *pending = NULL;
         char *state;
@@ -530,18 +531,18 @@ systemd_unit_exec_with_unit(svc_action_t * op, const char *unit)
         state = pcmk_dbus_get_property(systemd_proxy, BUS_NAME, unit,
                                        BUS_NAME ".Unit", "ActiveState",
                                        op->synchronous?NULL:systemd_unit_check,
-                                       op, op->synchronous?NULL:&pending);
+                                       op, op->synchronous?NULL:&pending, op->timeout);
         if (op->synchronous) {
             systemd_unit_check("ActiveState", state, op);
             free(state);
             return op->rc == PCMK_OCF_OK;
         } else if (pending) {
-            dbus_pending_call_ref(pending);
-            op->opaque->pending = pending;
+            services_set_op_pending(op, pending);
             return TRUE;
-        }
 
-        return FALSE;
+        } else {
+            return operation_finalize(op);
+        }
 
     } else if (g_strcmp0(method, "start") == 0) {
         FILE *file_strm = NULL;
@@ -578,7 +579,7 @@ systemd_unit_exec_with_unit(svc_action_t * op, const char *unit)
             fflush(file_strm);
             fclose(file_strm);
         }
-        systemd_daemon_reload();
+        systemd_daemon_reload(op->timeout);
         free(override_file);
         free(override_dir);
 
@@ -588,7 +589,7 @@ systemd_unit_exec_with_unit(svc_action_t * op, const char *unit)
         method = "StopUnit";
         unlink(override_file);
         free(override_file);
-        systemd_daemon_reload();
+        systemd_daemon_reload(op->timeout);
 
     } else if (g_strcmp0(method, "restart") == 0) {
         method = "RestartUnit";
@@ -615,20 +616,21 @@ systemd_unit_exec_with_unit(svc_action_t * op, const char *unit)
     }
 
     if (op->synchronous == FALSE) {
-        DBusPendingCall* pending = pcmk_dbus_send(msg, systemd_proxy, systemd_async_dispatch, op);
+        DBusPendingCall* pending = pcmk_dbus_send(msg, systemd_proxy, systemd_async_dispatch, op, op->timeout);
 
         dbus_message_unref(msg);
         if(pending) {
-            dbus_pending_call_ref(pending);
-            op->opaque->pending = pending;
+            services_set_op_pending(op, pending);
             return TRUE;
+
+        } else {
+            return operation_finalize(op);
         }
-        return FALSE;
 
     } else {
         DBusError error;
 
-        reply = pcmk_dbus_send_recv(msg, systemd_proxy, &error);
+        reply = pcmk_dbus_send_recv(msg, systemd_proxy, &error, op->timeout);
         dbus_message_unref(msg);
         systemd_exec_result(reply, op);
 
@@ -640,8 +642,7 @@ systemd_unit_exec_with_unit(svc_action_t * op, const char *unit)
 
   cleanup:
     if (op->synchronous == FALSE) {
-        operation_finalize(op);
-        return TRUE;
+        return operation_finalize(op);
     }
 
     return op->rc == PCMK_OCF_OK;
@@ -659,6 +660,8 @@ systemd_timeout_callback(gpointer p)
     return FALSE;
 }
 
+/* For an asynchronous 'op', returns FALSE if 'op' should be free'd by the caller */
+/* For a synchronous 'op', returns FALSE if 'op' fails */
 gboolean
 systemd_unit_exec(svc_action_t * op)
 {
@@ -672,11 +675,11 @@ systemd_unit_exec(svc_action_t * op)
 
     if (safe_str_eq(op->action, "meta-data")) {
         /* TODO: See if we can teach the lrmd not to make these calls synchronously */
-        op->stdout_data = systemd_unit_metadata(op->agent);
+        op->stdout_data = systemd_unit_metadata(op->agent, op->timeout);
         op->rc = PCMK_OCF_OK;
 
         if (op->synchronous == FALSE) {
-            operation_finalize(op);
+            return operation_finalize(op);
         }
         return TRUE;
     }
@@ -685,8 +688,14 @@ systemd_unit_exec(svc_action_t * op)
     free(unit);
 
     if (op->synchronous == FALSE) {
-        op->opaque->timerid = g_timeout_add(op->timeout + 5000, systemd_timeout_callback, op);
-        return TRUE;
+        if (op->opaque->pending) {
+            op->opaque->timerid = g_timeout_add(op->timeout + 5000, systemd_timeout_callback, op);
+            services_add_inflight_op(op);
+            return TRUE;
+
+        } else {
+            return operation_finalize(op);
+        }
     }
 
     return op->rc == PCMK_OCF_OK;

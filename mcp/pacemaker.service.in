@@ -20,7 +20,6 @@ WantedBy=multi-user.target
 Type=simple
 KillMode=process
 NotifyAccess=main
-SysVStartPriority=99
 EnvironmentFile=-@sysconfdir@/sysconfig/pacemaker
 EnvironmentFile=-@sysconfdir@/sysconfig/sbd
 SuccessExitStatus=100
@@ -56,6 +55,10 @@ TimeoutStartSec=60s
 
 # Restart options include: no, on-success, on-failure, on-abort or always
 Restart=on-failure
+
+# crm_perror() writes directly to stderr, so ignore it here
+# to avoid double-logging with the wrong format
+StandardError=null
+
 # if you use crm_mon, uncomment the line below.
 # ExecStopPost=/bin/sh -c 'systemctl status crm_mon >/dev/null && systemctl stop crm_mon'
-

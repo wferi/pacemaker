@@ -36,6 +36,7 @@ GHashTable *crm_peer_cache = NULL;
 GHashTable *crm_remote_peer_cache = NULL;
 unsigned long long crm_peer_seq = 0;
 gboolean crm_have_quorum = FALSE;
+static gboolean crm_autoreap  = TRUE;
 
 int
 crm_remote_peer_cache_size(void)
@@ -70,7 +71,7 @@ crm_remote_peer_cache_remove(const char *node_name)
 }
 
 static void
-remote_cache_refresh_helper(xmlNode *cib, const char *xpath, const char *field, int flags)
+remote_cache_refresh_helper(xmlNode *cib, const char *xpath, const char *field)
 {
     const char *remote = NULL;
     crm_node_t *node = NULL;
@@ -91,7 +92,7 @@ remote_cache_refresh_helper(xmlNode *cib, const char *xpath, const char *field, 
         if (remote) {
             crm_trace("added %s to remote cache", remote);
             node = calloc(1, sizeof(crm_node_t));
-            node->flags = flags;
+            node->flags = crm_remote_node;
             CRM_ASSERT(node);
             node->uname = strdup(remote);
             node->uuid = strdup(remote);
@@ -102,24 +103,40 @@ remote_cache_refresh_helper(xmlNode *cib, const char *xpath, const char *field, 
     freeXpathObject(xpathObj);
 }
 
+/* search string to find CIB resources entries for guest nodes */
+#define XPATH_GUEST_NODE_CONFIG \
+    "//" XML_TAG_CIB "//" XML_CIB_TAG_CONFIGURATION "//" XML_CIB_TAG_RESOURCE \
+    "//" XML_TAG_META_SETS "//" XML_CIB_TAG_NVPAIR \
+    "[@name='" XML_RSC_ATTR_REMOTE_NODE "']"
+
+/* search string to find CIB resources entries for remote nodes */
+#define XPATH_REMOTE_NODE_CONFIG \
+    "//" XML_TAG_CIB "//" XML_CIB_TAG_CONFIGURATION "//" XML_CIB_TAG_RESOURCE \
+    "[@type='remote'][@provider='pacemaker']"
+
+/* search string to find CIB node status entries for pacemaker_remote nodes */
+#define XPATH_REMOTE_NODE_STATUS \
+    "//" XML_TAG_CIB "//" XML_CIB_TAG_STATUS "//" XML_CIB_TAG_STATE \
+    "[@" XML_NODE_IS_REMOTE "='true']"
+
+/*!
+ * \brief Repopulate the remote peer cache based on CIB XML
+ *
+ * \param[in] xmlNode  CIB XML to parse
+ */
 void crm_remote_peer_cache_refresh(xmlNode *cib)
 {
-    const char *xpath = NULL;
-
     g_hash_table_remove_all(crm_remote_peer_cache);
 
     /* remote nodes associated with a cluster resource */
-    xpath = "//" XML_TAG_CIB "//" XML_CIB_TAG_CONFIGURATION "//" XML_CIB_TAG_RESOURCE "//" XML_TAG_META_SETS "//" XML_CIB_TAG_NVPAIR "[@name='remote-node']";
-    remote_cache_refresh_helper(cib, xpath, "value", crm_remote_node | crm_remote_container);
+    remote_cache_refresh_helper(cib, XPATH_GUEST_NODE_CONFIG, "value");
 
     /* baremetal nodes defined by connection resources*/
-    xpath = "//" XML_TAG_CIB "//" XML_CIB_TAG_CONFIGURATION "//" XML_CIB_TAG_RESOURCE "[@type='remote'][@provider='pacemaker']";
-    remote_cache_refresh_helper(cib, xpath, "id", crm_remote_node | crm_remote_baremetal);
+    remote_cache_refresh_helper(cib, XPATH_REMOTE_NODE_CONFIG, "id");
 
     /* baremetal nodes we have seen in the config that may or may not have connection
      * resources associated with them anymore */
-    xpath = "//" XML_TAG_CIB "//" XML_CIB_TAG_STATUS "//" XML_CIB_TAG_STATE "[@remote_node='true']";
-    remote_cache_refresh_helper(cib, xpath, "id", crm_remote_node | crm_remote_baremetal);
+    remote_cache_refresh_helper(cib, XPATH_REMOTE_NODE_STATUS, "id");
 }
 
 gboolean
@@ -170,6 +187,14 @@ crm_reap_dead_member(gpointer key, gpointer value, gpointer user_data)
     return FALSE;
 }
 
+/*!
+ * \brief Remove all peer cache entries matching a node ID and/or uname
+ *
+ * \param[in] id    ID of node to remove (or 0 to ignore)
+ * \param[in] name  Uname of node to remove (or NULL to ignore)
+ *
+ * \return Number of cache entries removed
+ */
 guint
 reap_crm_member(uint32_t id, const char *name)
 {
@@ -263,10 +288,37 @@ crm_peer_destroy(void)
 
 void (*crm_status_callback) (enum crm_status_type, crm_node_t *, const void *) = NULL;
 
+/*!
+ * \brief Set a client function that will be called after peer status changes
+ *
+ * \param[in] dispatch  Pointer to function to use as callback
+ *
+ * \note Previously, client callbacks were responsible for peer cache
+ *       management. This is no longer the case, and client callbacks should do
+ *       only client-specific handling. Callbacks MUST NOT add or remove entries
+ *       in the peer caches.
+ */
 void
 crm_set_status_callback(void (*dispatch) (enum crm_status_type, crm_node_t *, const void *))
 {
     crm_status_callback = dispatch;
+}
+
+/*!
+ * \brief Tell the library whether to automatically reap lost nodes
+ *
+ * If TRUE (the default), calling crm_update_peer_proc() will also update the
+ * peer state to CRM_NODE_MEMBER or CRM_NODE_LOST, and crm_update_peer_state()
+ * will reap peers whose state changes to anything other than CRM_NODE_MEMBER.
+ * Callers should leave this enabled unless they plan to manage the cache
+ * separately on their own.
+ *
+ * \param[in] autoreap  TRUE to enable automatic reaping, FALSE to disable
+ */
+void
+crm_set_autoreap(gboolean autoreap)
+{
+    crm_autoreap = autoreap;
 }
 
 static void crm_dump_peer_hash(int level, const char *caller)
@@ -482,8 +534,8 @@ crm_get_peer(unsigned int id, const char *uname)
     }
 
     if (uname_lookup) {
-        crm_trace("Inferred a name of '%s' for node %u", uname, id);
         uname = uname_lookup;
+        crm_trace("Inferred a name of '%s' for node %u", uname, id);
 
         /* try to turn up the node one more time now that we know the uname. */
         if (node == NULL) {
@@ -511,27 +563,8 @@ crm_get_peer(unsigned int id, const char *uname)
         node->id = id;
     }
 
-    if(uname && node->uname == NULL) {
-        int lpc, len = strlen(uname);
-
-        for (lpc = 0; lpc < len; lpc++) {
-            if (uname[lpc] >= 'A' && uname[lpc] <= 'Z') {
-                crm_warn("Node names with capitals are discouraged, consider changing '%s' to something else",
-                         uname);
-                break;
-            }
-        }
-
-        node->uname = strdup(uname);
-        if (crm_status_callback) {
-            crm_status_callback(crm_status_uname, node, NULL);
-        }
-
-#if SUPPORT_COROSYNC
-        if (is_openais_cluster()) {
-            crm_remove_conflicting_peer(node);
-        }
-#endif
+    if (uname && (node->uname == NULL)) {
+        crm_update_peer_uname(node, uname);
     }
 
     if(node->uuid == NULL) {
@@ -550,6 +583,17 @@ crm_get_peer(unsigned int id, const char *uname)
     return node;
 }
 
+/*!
+ * \internal
+ * \brief Update all of a node's information (process list, state, etc.)
+ *
+ * \param[in] source      Caller's function name (for log messages)
+ *
+ * \return NULL if node was reaped from peer caches, pointer to node otherwise
+ *
+ * \note This function should not be called within a peer cache iteration,
+ *       otherwise reaping could invalidate the iterator.
+ */
 crm_node_t *
 crm_update_peer(const char *source, unsigned int id, uint64_t born, uint64_t seen, int32_t votes,
                 uint32_t children, const char *uuid, const char *uname, const char *addr,
@@ -577,11 +621,15 @@ crm_update_peer(const char *source, unsigned int id, uint64_t born, uint64_t see
     }
 
     if (children > 0) {
-        crm_update_peer_proc(source, node, children, state);
+        if (crm_update_peer_proc(source, node, children, state) == NULL) {
+            return NULL;
+        }
     }
 
     if (state != NULL) {
-        crm_update_peer_state(source, node, state, seen);
+        if (crm_update_peer_state(source, node, state, seen) == NULL) {
+            return NULL;
+        }
     }
 #if SUPPORT_HEARTBEAT
     if (born != 0) {
@@ -618,14 +666,72 @@ crm_update_peer(const char *source, unsigned int id, uint64_t born, uint64_t see
     return node;
 }
 
+/*!
+ * \internal
+ * \brief Update a node's uname
+ *
+ * \param[in] node        Node object to update
+ * \param[in] uname       New name to set
+ *
+ * \note This function should not be called within a peer cache iteration,
+ *       because in some cases it can remove conflicting cache entries,
+ *       which would invalidate the iterator.
+ */
 void
+crm_update_peer_uname(crm_node_t *node, const char *uname)
+{
+    int i, len = strlen(uname);
+
+    for (i = 0; i < len; i++) {
+        if (uname[i] >= 'A' && uname[i] <= 'Z') {
+            crm_warn("Node names with capitals are discouraged, consider changing '%s'",
+                     uname);
+            break;
+        }
+    }
+
+    free(node->uname);
+    node->uname = strdup(uname);
+    if (crm_status_callback) {
+        crm_status_callback(crm_status_uname, node, NULL);
+    }
+
+#if SUPPORT_COROSYNC
+    if (is_openais_cluster() && !is_set(node->flags, crm_remote_node)) {
+        crm_remove_conflicting_peer(node);
+    }
+#endif
+}
+
+/*!
+ * \internal
+ * \brief Update a node's process information (and potentially state)
+ *
+ * \param[in] source      Caller's function name (for log messages)
+ * \param[in] node        Node object to update
+ * \param[in] flag        Bitmask of new process information
+ * \param[in] status      node status (online, offline, etc.)
+ *
+ * \return NULL if any node was reaped from peer caches, value of node otherwise
+ *
+ * \note If this function returns NULL, the supplied node object was likely
+ *       freed and should not be used again. This function should not be
+ *       called within a cache iteration if reaping is possible, otherwise
+ *       reaping could invalidate the iterator.
+ */
+crm_node_t *
 crm_update_peer_proc(const char *source, crm_node_t * node, uint32_t flag, const char *status)
 {
     uint32_t last = 0;
     gboolean changed = FALSE;
 
     CRM_CHECK(node != NULL, crm_err("%s: Could not set %s to %s for NULL",
-                                    source, peer2text(flag), status); return);
+                                    source, peer2text(flag), status); return NULL);
+
+    /* Pacemaker doesn't spawn processes on remote nodes */
+    if (is_set(node->flags, crm_remote_node)) {
+        return node;
+    }
 
     last = node->processes;
     if (status == NULL) {
@@ -661,13 +767,30 @@ crm_update_peer_proc(const char *source, crm_node_t * node, uint32_t flag, const
                      peer2text(flag), status);
         }
 
+        /* Call the client callback first, then update the peer state,
+         * in case the node will be reaped
+         */
         if (crm_status_callback) {
             crm_status_callback(crm_status_processes, node, &last);
+        }
+
+        /* The client callback shouldn't touch the peer caches,
+         * but as a safety net, bail if the peer cache was destroyed.
+         */
+        if (crm_peer_cache == NULL) {
+            return NULL;
+        }
+
+        if (crm_autoreap) {
+            node = crm_update_peer_state(__FUNCTION__, node,
+                                         is_set(node->processes, crm_get_cluster_proc())?
+                                         CRM_NODE_MEMBER : CRM_NODE_LOST, 0);
         }
     } else {
         crm_trace("%s: Node %s[%u] - %s is unchanged (%s)", source, node->uname, node->id,
                   peer2text(flag), status);
     }
+    return node;
 }
 
 void
@@ -678,6 +801,11 @@ crm_update_peer_expected(const char *source, crm_node_t * node, const char *expe
 
     CRM_CHECK(node != NULL, crm_err("%s: Could not set 'expected' to %s", source, expected);
               return);
+
+    /* Remote nodes don't participate in joins */
+    if (is_set(node->flags, crm_remote_node)) {
+        return;
+    }
 
     last = node->expected;
     if (expected != NULL && safe_str_neq(node->expected, expected)) {
@@ -695,38 +823,120 @@ crm_update_peer_expected(const char *source, crm_node_t * node, const char *expe
     }
 }
 
-void
-crm_update_peer_state(const char *source, crm_node_t * node, const char *state, int membership)
+/*!
+ * \internal
+ * \brief Update a node's state and membership information
+ *
+ * \param[in] source      Caller's function name (for log messages)
+ * \param[in] node        Node object to update
+ * \param[in] state       Node's new state
+ * \param[in] membership  Node's new membership ID
+ * \param[in] iter        If not NULL, pointer to node's peer cache iterator
+ *
+ * \return NULL if any node was reaped, value of node otherwise
+ *
+ * \note If this function returns NULL, the supplied node object was likely
+ *       freed and should not be used again. This function may be called from
+ *       within a peer cache iteration if the iterator is supplied.
+ */
+static crm_node_t *
+crm_update_peer_state_iter(const char *source, crm_node_t * node, const char *state, int membership, GHashTableIter *iter)
 {
-    char *last = NULL;
-    gboolean changed = FALSE;
+    gboolean is_member;
 
     CRM_CHECK(node != NULL, crm_err("%s: Could not set 'state' to %s", source, state);
-              return);
+                            return NULL);
 
-    last = node->state;
-    if (state != NULL && safe_str_neq(node->state, state)) {
-        node->state = strdup(state);
-        changed = TRUE;
-    }
-
-    if (membership != 0 && safe_str_eq(node->state, CRM_NODE_MEMBER)) {
+    is_member = safe_str_eq(state, CRM_NODE_MEMBER);
+    if (membership && is_member) {
         node->last_seen = membership;
     }
 
-    if (changed) {
-        crm_notice("%s: Node %s[%u] - state is now %s (was %s)", source, node->uname, node->id, state, last);
+    if (state && safe_str_neq(node->state, state)) {
+        char *last = node->state;
+        enum crm_status_type status_type = is_set(node->flags, crm_remote_node)?
+                                           crm_status_rstate : crm_status_nstate;
+
+        node->state = strdup(state);
+        crm_notice("%s: Node %s[%u] - state is now %s (was %s)",
+                   source, node->uname, node->id, state, last);
         if (crm_status_callback) {
-            enum crm_status_type status_type = crm_status_nstate;
-            if (is_set(node->flags, crm_remote_node)) {
-                status_type = crm_status_rstate;
-            }
             crm_status_callback(status_type, node, last);
         }
         free(last);
+
+        if (crm_autoreap && !is_member && !is_set(node->flags, crm_remote_node)) {
+            /* We only autoreap from the peer cache, not the remote peer cache,
+             * because the latter should be managed only by
+             * crm_remote_peer_cache_refresh().
+             */
+            if(iter) {
+                crm_notice("Purged 1 peer with id=%u and/or uname=%s from the membership cache", node->id, node->uname);
+                g_hash_table_iter_remove(iter);
+
+            } else {
+                reap_crm_member(node->id, node->uname);
+            }
+            node = NULL;
+        }
+
     } else {
         crm_trace("%s: Node %s[%u] - state is unchanged (%s)", source, node->uname, node->id,
                   state);
+    }
+    return node;
+}
+
+/*!
+ * \brief Update a node's state and membership information
+ *
+ * \param[in] source      Caller's function name (for log messages)
+ * \param[in] node        Node object to update
+ * \param[in] state       Node's new state
+ * \param[in] membership  Node's new membership ID
+ *
+ * \return NULL if any node was reaped, value of node otherwise
+ *
+ * \note If this function returns NULL, the supplied node object was likely
+ *       freed and should not be used again. This function should not be
+ *       called within a cache iteration if reaping is possible,
+ *       otherwise reaping could invalidate the iterator.
+ */
+crm_node_t *
+crm_update_peer_state(const char *source, crm_node_t * node, const char *state, int membership)
+{
+    return crm_update_peer_state_iter(source, node, state, membership, NULL);
+}
+
+/*!
+ * \internal
+ * \brief Reap all nodes from cache whose membership information does not match
+ *
+ * \param[in] membership  Membership ID of nodes to keep
+ */
+void
+crm_reap_unseen_nodes(uint64_t membership)
+{
+    GHashTableIter iter;
+    crm_node_t *node = NULL;
+
+    crm_trace("Reaping unseen nodes...");
+    g_hash_table_iter_init(&iter, crm_peer_cache);
+    while (g_hash_table_iter_next(&iter, NULL, (gpointer *)&node)) {
+        if (node->last_seen != membership) {
+            if (node->state) {
+                /*
+                 * Calling crm_update_peer_state_iter() allows us to
+                 * remove the node from crm_peer_cache without
+                 * invalidating our iterator
+                 */
+                crm_update_peer_state_iter(__FUNCTION__, node, CRM_NODE_LOST, membership, &iter);
+
+            } else {
+                crm_info("State of node %s[%u] is still unknown",
+                         node->uname, node->id);
+            }
+        }
     }
 }
 

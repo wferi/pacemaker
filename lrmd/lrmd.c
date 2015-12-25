@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 David Vossel <dvossel@redhat.com>
+ * Copyright (c) 2012 David Vossel <davidvossel@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -219,6 +219,7 @@ free_lrmd_cmd(lrmd_cmd_t * cmd)
     }
     free(cmd->origin);
     free(cmd->action);
+    free(cmd->real_action);
     free(cmd->userdata_str);
     free(cmd->rsc_id);
     free(cmd->output);
@@ -974,7 +975,7 @@ action_complete(svc_action_t * action)
 
         } else {
             crm_notice("Giving up on %s %s (rc=%d): timeout (elapsed=%dms, remaining=%dms)",
-                       cmd->rsc_id, cmd->action, cmd->exec_rc, time_sum, timeout_left);
+                       cmd->rsc_id, cmd->real_action?cmd->real_action:cmd->action, cmd->exec_rc, time_sum, timeout_left);
             cmd->lrmd_op_status = PCMK_LRM_OP_TIMEOUT;
             cmd->exec_rc = PCMK_OCF_TIMEOUT;
             cmd_original_times(cmd);
@@ -1061,6 +1062,9 @@ stonith_connection_failed(void)
     g_hash_table_iter_init(&iter, rsc_list);
     while (g_hash_table_iter_next(&iter, (gpointer *) & key, (gpointer *) & rsc)) {
         if (safe_str_eq(rsc->class, "stonith")) {
+            if (rsc->active) {
+                cmd_list = g_list_append(cmd_list, rsc->active);
+            }
             if (rsc->recurring_ops) {
                 cmd_list = g_list_concat(cmd_list, rsc->recurring_ops);
             }
@@ -1318,22 +1322,33 @@ free_rsc(gpointer data)
     lrmd_rsc_t *rsc = data;
     int is_stonith = safe_str_eq(rsc->class, "stonith");
 
-    for (gIter = rsc->pending_ops; gIter != NULL; gIter = gIter->next) {
+    gIter = rsc->pending_ops;
+    while (gIter != NULL) {
+        GListPtr next = gIter->next;
         lrmd_cmd_t *cmd = gIter->data;
 
         /* command was never executed */
         cmd->lrmd_op_status = PCMK_LRM_OP_CANCELLED;
         cmd_finalize(cmd, NULL);
+
+        gIter = next;
     }
     /* frees list, but not list elements. */
     g_list_free(rsc->pending_ops);
 
-    for (gIter = rsc->recurring_ops; gIter != NULL; gIter = gIter->next) {
+    gIter = rsc->recurring_ops;
+    while (gIter != NULL) {
+        GListPtr next = gIter->next;
         lrmd_cmd_t *cmd = gIter->data;
 
         if (is_stonith) {
             cmd->lrmd_op_status = PCMK_LRM_OP_CANCELLED;
-            cmd_finalize(cmd, NULL);
+            /* if a stonith cmd is in-flight, mark just mark it as cancelled,
+             * it is not safe to finalize/free the cmd until the stonith api
+             * says it has either completed or timed out.*/ 
+            if (rsc->active != cmd) {
+                cmd_finalize(cmd, NULL);
+            }
         } else {
             /* This command is already handed off to service library,
              * let service library cancel it and tell us via the callback
@@ -1341,6 +1356,8 @@ free_rsc(gpointer data)
              * even if we are waiting for the cancel result */
             services_action_cancel(rsc->rsc_id, normalize_action_name(rsc, cmd->action), cmd->interval);
         }
+
+        gIter = next;
     }
     /* frees list, but not list elements. */
     g_list_free(rsc->recurring_ops);

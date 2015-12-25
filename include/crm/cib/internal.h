@@ -106,7 +106,7 @@ typedef struct cib_callback_client_s {
     void *user_data;
     gboolean only_success;
     struct timer_rec_s *timer;
-
+    void (*free_func)(void *);
 } cib_callback_client_t;
 
 struct timer_rec_s {
@@ -137,6 +137,13 @@ int cib_native_register_notification(cib_t * cib, const char *callback, int enab
 gboolean cib_client_register_callback(cib_t * cib, int call_id, int timeout, gboolean only_success,
                                       void *user_data, const char *callback_name,
                                       void (*callback) (xmlNode *, int, int, xmlNode *, void *));
+gboolean cib_client_register_callback_full(cib_t *cib, int call_id,
+                                           int timeout, gboolean only_success,
+                                           void *user_data,
+                                           const char *callback_name,
+                                           void (*callback)(xmlNode *, int, int,
+                                                            xmlNode *, void *),
+                                           void (*free_func)(void *));
 
 int cib_process_query(const char *op, int options, const char *section, xmlNode * req,
                       xmlNode * input, xmlNode * existing_cib, xmlNode ** result_cib,
@@ -174,6 +181,25 @@ int cib_process_upgrade(const char *op, int options, const char *section, xmlNod
                         xmlNode * input, xmlNode * existing_cib, xmlNode ** result_cib,
                         xmlNode ** answer);
 
+/*!
+ * \internal
+ * \brief Core function to manipulate with/query CIB/XML per xpath + arguments
+ * \param[in] op, the operation to be performed:
+ *                <tt>CIB_OP_{CREATE,DELETE,MODIFY,QUERY,REPLACE}</tt>
+ * \param[in] options, ORed flags per relevant \c cib_call_options enumeration:
+ *                     <tt>cib_{multiple,no_children,xpath_address}</tt>
+ * \param[in] section, xpath defining place of interest in
+ *                     <tt>{existing,result}_cib</tt>
+ * \param[in] req, UNUSED
+ * \param[in] input, the input operand for
+ *                   <tt>CIB_OP_{CREATE,MODIFY,REPLACE}</tt>
+ * \param[in] existing_cib, the input operand (CIB) for \c CIB_OP_QUERY
+ * \param[inout] result_cib, the operand and result for
+ *                           <tt>CIB_OP_{CREATE,DELETE,MODIFY,REPLACE}</tt>
+ * \param[out] answer, the result for \c CIB_OP_QUERY, structured per \c options
+ *
+ * \retval \c pcmk_ok (0) for success, different value for failure
+ */
 int cib_process_xpath(const char *op, int options, const char *section, xmlNode * req,
                       xmlNode * input, xmlNode * existing_cib, xmlNode ** result_cib,
                       xmlNode ** answer);

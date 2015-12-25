@@ -72,7 +72,7 @@ send_stonith_update(crm_action_t * action, const char *target, const char *uuid)
     CRM_CHECK(uuid != NULL, return);
 
     /* Make sure the membership and join caches are accurate */
-    peer = crm_get_peer_full(0, target, CRM_GET_PEER_CLUSTER | CRM_GET_PEER_REMOTE);
+    peer = crm_get_peer_full(0, target, CRM_GET_PEER_ANY);
 
     CRM_CHECK(peer != NULL, return);
 
@@ -82,10 +82,22 @@ send_stonith_update(crm_action_t * action, const char *target, const char *uuid)
     }
 
     crmd_peer_down(peer, TRUE);
-    node_state =
-        do_update_node_cib(peer,
-                           node_update_cluster | node_update_peer | node_update_join |
-                           node_update_expected, NULL, __FUNCTION__);
+
+    /* Generate a node state update for the CIB.
+     * We rely on the membership layer to do node_update_cluster,
+     * and the peer status callback to do node_update_peer,
+     * because the node might rejoin before we get the stonith result.
+     */
+    node_state = do_update_node_cib(peer, node_update_join|node_update_expected,
+                                    NULL, __FUNCTION__);
+
+    /* we have to mark whether or not remote nodes have already been fenced */
+    if (peer->flags & crm_remote_node) {
+        time_t now = time(NULL);
+        char *now_s = crm_itoa(now);
+        crm_xml_add(node_state, XML_NODE_IS_FENCED, now_s);
+        free(now_s);
+    }
 
     /* Force our known ID */
     crm_xml_add(node_state, XML_ATTR_UUID, uuid);

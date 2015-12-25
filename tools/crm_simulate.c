@@ -38,6 +38,7 @@
 
 cib_t *global_cib = NULL;
 GListPtr op_fail = NULL;
+bool action_numbers = FALSE;
 gboolean quiet = FALSE;
 gboolean print_pending = FALSE;
 char *temp_shadow = NULL;
@@ -54,13 +55,30 @@ extern void cleanup_alloc_calculations(pe_working_set_t * data_set);
 extern xmlNode *do_calculations(pe_working_set_t * data_set, xmlNode * xml_input, crm_time_t * now);
 
 char *use_date = NULL;
-static crm_time_t *
-get_date(void)
+
+static void
+get_date(pe_working_set_t * data_set)
 {
+    int value = 0;
+    time_t original_date = 0;
+
+    crm_element_value_int(data_set->input, "execution-date", &value);
+    original_date = value;
+
     if (use_date) {
-        return crm_time_new(use_date);
+        data_set->now = crm_time_new(use_date);
+
+    } else if(original_date) {
+        char *when = NULL;
+
+        data_set->now = crm_time_new(NULL);
+        crm_time_set_timet(data_set->now, &original_date);
+
+        when = crm_time_as_string(data_set->now, crm_time_log_date|crm_time_log_timeofday);
+        printf("Using the original execution date of: %s\n", when);
+
+        free(when);
     }
-    return NULL;
 }
 
 static void
@@ -247,6 +265,12 @@ create_action_name(action_t * action)
         action_name = crm_strdup_printf("%s", action->uuid);
     }
 
+    if(action_numbers) {
+        char *with_id = crm_strdup_printf("%s (%d)", action_name, action->id);
+
+        free(action_name);
+        action_name = with_id;
+    }
     return action_name;
 }
 
@@ -514,7 +538,7 @@ profile_one(const char *xml_file)
     set_working_set_defaults(&data_set);
 
     data_set.input = cib_object;
-    data_set.now = get_date();
+    get_date(&data_set);
     do_calculations(&data_set, cib_object, NULL);
 
     cleanup_alloc_calculations(&data_set);
@@ -620,6 +644,7 @@ main(int argc, char **argv)
                 }
 
                 crm_bump_log_level(argc, argv);
+                action_numbers = TRUE;
                 break;
             case '?':
             case '$':
@@ -764,7 +789,10 @@ main(int argc, char **argv)
     CRM_ASSERT(rc == pcmk_ok);
 
     data_set.input = input;
-    data_set.now = get_date();
+    get_date(&data_set);
+    if(xml_file) {
+        set_bit(data_set.flags, pe_flag_sanitized);
+    }
     cluster_status(&data_set);
 
     if (quiet == FALSE) {
@@ -785,9 +813,14 @@ main(int argc, char **argv)
             goto done;
         }
 
-        cleanup_alloc_calculations(&data_set);
-        data_set.now = get_date();
+        cleanup_calculations(&data_set);
         data_set.input = input;
+        get_date(&data_set);
+
+        if(xml_file) {
+            set_bit(data_set.flags, pe_flag_sanitized);
+        }
+        cluster_status(&data_set);
     }
 
     if (input_file != NULL) {
@@ -839,7 +872,7 @@ main(int argc, char **argv)
     if (simulate) {
         rc = run_simulation(&data_set, global_cib, op_fail, quiet);
         if(quiet == FALSE) {
-            data_set.now = get_date();
+            get_date(&data_set);
 
             quiet_log("\nRevised cluster status:\n");
             cluster_status(&data_set);

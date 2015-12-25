@@ -5,11 +5,10 @@ Author: Andrew Beekhof <abeekhof@suse.de>
 Copyright (C) 2008 Andrew Beekhof
 '''
 
-from UserDict import UserDict
-import sys, time, types, syslog, os, struct, string, signal, traceback, warnings, socket
+import sys
+import string
 
 from cts.CTSvars import *
-from cts.CTS     import ClusterManager
 from cts.CIB     import CibBase
 
 
@@ -21,7 +20,7 @@ class XmlBase(CibBase):
         text = '''<%s''' % self.tag
         if self.name:
             text += ''' id="%s"''' % (self.name)
-        for k in self.kwargs.keys():
+        for k in list(self.kwargs.keys()):
             text += ''' %s="%s"''' % (k, self.kwargs[k])
 
         if not self.children:
@@ -37,7 +36,11 @@ class XmlBase(CibBase):
         return text
 
     def _run(self, operation, xml, section="all", options=""):
-        self.Factory.debug("Writing out %s" % self.name)
+        if self.name:
+            label = self.name
+        else:
+            label = "<%s>" % self.tag
+        self.Factory.debug("Writing out %s" % label)
         fixed  = "HOME=/root CIB_file="+self.Factory.tmpfile
         fixed += " cibadmin --%s --scope %s %s --xml-text '%s'" % (operation, section, options, xml)
         rc = self.Factory.rsh(self.Factory.target, fixed)
@@ -46,12 +49,56 @@ class XmlBase(CibBase):
             sys.exit(1)
 
 
+class InstanceAttributes(XmlBase):
+    """ Create an <instance_attributes> section with name-value pairs """
+
+    def __init__(self, Factory, name, attrs):
+        XmlBase.__init__(self, Factory, "instance_attributes", name)
+
+        # Create an <nvpair> for each attribute
+        for (attr, value) in attrs.items():
+            self.add_child(XmlBase(Factory, "nvpair", "%s-%s" % (name, attr),
+                name=attr, value=value))
+
+
+class Node(XmlBase):
+    """ Create a <node> section with node attributes for one node """
+
+    def __init__(self, Factory, node_name, node_id, node_attrs):
+        XmlBase.__init__(self, Factory, "node", node_id, uname=node_name)
+        self.add_child(InstanceAttributes(Factory, "%s-1" % node_name, node_attrs))
+
+
+class Nodes(XmlBase):
+    """ Create a <nodes> section """
+
+    def __init__(self, Factory):
+        XmlBase.__init__(self, Factory, "nodes", None)
+
+    def add_node(self, node_name, node_id, node_attrs):
+        self.add_child(Node(self.Factory, node_name, node_id, node_attrs))
+
+    def commit(self):
+        self._run("modify", self.show(), "configuration", "--allow-create")
+
+
 class FencingTopology(XmlBase):
     def __init__(self, Factory):
         XmlBase.__init__(self, Factory, "fencing-topology", None)
 
-    def level(self, index, node, devices):
-        self.add_child(XmlBase(self.Factory, "fencing-level", "cts-%s.%d" % (node, index), target=node, index=index, devices=devices))
+    def level(self, index, target, devices, target_attr=None, target_value=None):
+        # Generate XML ID (sanitizing target-by-attribute levels)
+
+        if target:
+            xml_id = "cts-%s.%d" % (target, index)
+            self.add_child(XmlBase(self.Factory, "fencing-level", xml_id, target=target, index=index, devices=devices))
+
+        else:
+            xml_id = "%s-%s.%d" % (target_attr, target_value, index)
+            child = XmlBase(self.Factory, "fencing-level", xml_id, index=index, devices=devices)
+            child["target-attribute"]=target_attr
+            child["target-value"]=target_value
+            self.add_child(child)
 
     def commit(self):
         self._run("create", self.show(), "configuration", "--allow-create")
@@ -151,22 +198,22 @@ class Resource(XmlBase):
     def constraints(self):
         text = "<constraints>"
 
-        for k in self.scores.keys():
+        for k in list(self.scores.keys()):
             text += '''<rsc_location id="prefer-%s" rsc="%s">''' % (k, self.name)
             text += self.scores[k].show()
             text += '''</rsc_location>'''
 
-        for k in self.needs.keys():
+        for k in list(self.needs.keys()):
             text += '''<rsc_order id="%s-after-%s" first="%s" then="%s"''' % (self.name, k, k, self.name)
             kargs = self.needs[k]
-            for kw in kargs.keys():
+            for kw in list(kargs.keys()):
                 text += ''' %s="%s"''' % (kw, kargs[kw])
             text += '''/>'''
 
-        for k in self.coloc.keys():
+        for k in list(self.coloc.keys()):
             text += '''<rsc_colocation id="%s-with-%s" rsc="%s" with-rsc="%s"''' % (self.name, k, self.name, k)
             kargs = self.coloc[k]
-            for kw in kargs.keys():
+            for kw in list(kargs.keys()):
                 text += ''' %s="%s"''' % (kw, kargs[kw])
             text += '''/>'''
 
@@ -181,13 +228,13 @@ class Resource(XmlBase):
 
         if len(self.meta) > 0:
             text += '''<meta_attributes id="%s-meta">''' % self.name
-            for p in self.meta.keys():
+            for p in list(self.meta.keys()):
                 text += '''<nvpair id="%s-%s" name="%s" value="%s"/>''' % (self.name, p, p, self.meta[p])
             text += '''</meta_attributes>'''
 
         if len(self.param) > 0:
             text += '''<instance_attributes id="%s-params">''' % self.name
-            for p in self.param.keys():
+            for p in list(self.param.keys()):
                 text += '''<nvpair id="%s-%s" name="%s" value="%s"/>''' % (self.name, p, p, self.param[p])
             text += '''</instance_attributes>'''
 
@@ -221,7 +268,7 @@ class Group(Resource):
 
         if len(self.meta) > 0:
             text += '''<meta_attributes id="%s-meta">''' % self.name
-            for p in self.meta.keys():
+            for p in list(self.meta.keys()):
                 text += '''<nvpair id="%s-%s" name="%s" value="%s"/>''' % (self.name, p, p, self.meta[p])
             text += '''</meta_attributes>'''
 

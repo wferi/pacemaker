@@ -80,6 +80,7 @@ shell/modules/vars.py
 tools/cibsecret
 tools/coverage.sh
 tools/crm_error
+tools/crm_mon.service
 tools/crm_mon.upstart
 tools/crm_report
 tools/report.common
@@ -138,9 +139,7 @@ tools/report.collector.1
 xml/crm.dtd
 xml/pacemaker*.rng
 xml/versions.rng
-extra/rgmanager/ccs2cib
-extra/rgmanager/ccs_flatten
-extra/rgmanager/disable_rgmanager
+doc/shared/en-US/*.xml
 doc/Clusters_from_Scratch.build
 doc/Clusters_from_Scratch/en-US/Ap-*.xml
 doc/Clusters_from_Scratch/en-US/Ch-*.xml

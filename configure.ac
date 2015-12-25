@@ -529,6 +529,7 @@ AC_PATH_PROGS(ASCIIDOC, asciidoc)
 AC_PATH_PROGS(PUBLICAN, publican)
 AC_PATH_PROGS(INKSCAPE, inkscape)
 AC_PATH_PROGS(XSLTPROC, xsltproc)
+AC_PATH_PROGS(XMLCATALOG, xmlcatalog)
 AC_PATH_PROGS(FOP, fop)
 AC_PATH_PROGS(SSH, ssh, /usr/bin/ssh)
 AC_PATH_PROGS(SCP, scp, /usr/bin/scp)
@@ -560,15 +561,23 @@ fi
 MANPAGE_XSLT=""
 if test x"${XSLTPROC}" != x""; then
   AC_MSG_CHECKING(docbook to manpage transform)
-  XSLT=`find ${datadir} -name docbook.xsl`
-  for xsl in $XSLT; do
-    dname=`dirname $xsl`
-    bname=`basename $dname`
-    if test "$bname" = "manpages"; then
-       MANPAGE_XSLT="$xsl"
-       break
-    fi
-  done
+  # first try to figure out correct template using xmlcatalog query,
+  # resort to extensive (semi-deterministic) file search if that fails
+  DOCBOOK_XSL_URI='http://docbook.sourceforge.net/release/xsl/current'
+  DOCBOOK_XSL_PATH='manpages/docbook.xsl'
+  MANPAGE_XSLT=$(${XMLCATALOG} "" ${DOCBOOK_XSL_URI}/${DOCBOOK_XSL_PATH} \
+                 | sed -n 's|^file://||p;q')
+  if test x"${MANPAGE_XSLT}" = x""; then
+    DIRS=$(find "${datadir}" -name $(basename $(dirname ${DOCBOOK_XSL_PATH})) \
+           -type d | LC_ALL=C sort)
+    XSLT=$(basename ${DOCBOOK_XSL_PATH})
+    for d in ${DIRS}; do
+      if test -f "${d}/${XSLT}"; then
+         MANPAGE_XSLT="${d}/${XSLT}"
+         break
+      fi
+    done
+  fi
 fi
 AC_MSG_RESULT($MANPAGE_XSLT)
 AC_SUBST(MANPAGE_XSLT)
@@ -1152,7 +1161,7 @@ AC_DEFINE_UNQUOTED(RH_STONITH_PREFIX,"$RH_STONITH_PREFIX", Prefix for Red Hat St
 AC_PATH_PROGS(GIT, git false)
 AC_MSG_CHECKING(build version)
 
-BUILD_VERSION=6052cd1
+BUILD_VERSION=89d36bc
 if test $BUILD_VERSION != ":%h$"; then
    AC_MSG_RESULT(archive hash: $BUILD_VERSION)
 
@@ -1196,6 +1205,7 @@ fi
 
 AC_DEFINE_UNQUOTED(SUPPORT_UPSTART, $HAVE_upstart, Support upstart based system services)
 AM_CONDITIONAL(BUILD_UPSTART, test $HAVE_upstart = 1)
+AC_SUBST(SUPPORT_UPSTART)
 
 if
     $PKGCONFIG --exists systemd
@@ -1215,6 +1225,7 @@ fi
 
 AC_DEFINE_UNQUOTED(SUPPORT_SYSTEMD, $HAVE_systemd, Support systemd based system services)
 AM_CONDITIONAL(BUILD_SYSTEMD, test $HAVE_systemd = 1)
+AC_SUBST(SUPPORT_SYSTEMD)
 
 case $SUPPORT_NAGIOS in
      1|yes|true|try)
@@ -1393,6 +1404,7 @@ AC_DEFINE_UNQUOTED(HAVE_ATOMIC_ATTRD, $BUILD_ATOMIC_ATTRD, Support the new atomi
 
 AC_SUBST(SUPPORT_CMAN)
 AC_SUBST(SUPPORT_CS)
+AC_SUBST(SUPPORT_PLUGIN)
 
 dnl
 dnl    Cluster stack - Sanity
@@ -1877,7 +1889,6 @@ lrmd/Makefile                                                   \
         lrmd/pacemaker_remote					\
 extra/Makefile							\
 	extra/resources/Makefile				\
-	extra/rgmanager/Makefile				\
 	extra/logrotate/Makefile				\
 	extra/logrotate/pacemaker				\
 tools/Makefile							\

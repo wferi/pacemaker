@@ -75,6 +75,7 @@ enum pe_find {
 #  define pe_flag_have_remote_nodes	0x00040000ULL
 
 #  define pe_flag_quick_location  	0x00100000ULL
+#  define pe_flag_sanitized             0x00200000ULL
 
 typedef struct pe_working_set_s {
     xmlNode *input;
@@ -154,6 +155,7 @@ struct node_shared_s {
     gboolean maintenance;
     gboolean rsc_discovery_enabled;
     gboolean remote_requires_reset;
+    gboolean remote_was_fenced;
 };
 
 struct node_s {
@@ -226,10 +228,11 @@ enum pe_action_flags {
     pe_action_clear = 0x00400,
     pe_action_dangle = 0x00800,
 
-    pe_action_requires_any = 0x01000, /* This action requires one or mre of its dependancies to be runnable
-                                       * We use this to clear the runnable flag before checking dependancies
+    pe_action_requires_any = 0x01000, /* This action requires one or mre of its dependencies to be runnable
+                                       * We use this to clear the runnable flag before checking dependencies
                                        */
     pe_action_reschedule = 0x02000,
+    pe_action_tracking = 0x04000,
 };
 /* *INDENT-ON* */
 
@@ -291,6 +294,7 @@ struct resource_s {
 
     const char *isolation_wrapper;
     gboolean exclusive_discover;
+    int remote_reconnect_interval;
 };
 
 struct pe_action_s {
@@ -319,6 +323,26 @@ struct pe_action_s {
 
     GHashTable *meta;
     GHashTable *extra;
+
+    /* 
+     * These two varables are associated with the constraint logic
+     * that involves first having one or more actions runnable before
+     * then allowing this action to execute.
+     *
+     * These varables are used with features such as 'clone-min' which
+     * requires at minimum X number of cloned instances to be running
+     * before an order dependency can run. Another option that uses
+     * this is 'require-all=false' in ordering constrants. This option
+     * says "only required one instance of a resource to start before
+     * allowing dependencies to start" basicall require-all=false is
+     * the same as clone-min=1.
+     */
+
+    /* current number of known runnable actions in the before list. */
+    int runnable_before;
+    /* the number of "before" runnable actions required for this action
+     * to be considered runnable */ 
+    int required_runnable_before;
 
     GListPtr actions_before;    /* action_warpper_t* */
     GListPtr actions_after;     /* action_warpper_t* */
@@ -373,7 +397,7 @@ enum pe_ordering {
 
     pe_order_asymmetrical          = 0x100000,  /* Indicates asymmetrical one way ordering constraint. */
     pe_order_load                  = 0x200000,  /* Only relevant if... */
-    pe_order_one_or_more           = 0x400000,  /* 'then' is only runnable if one or more of it's dependancies are too */
+    pe_order_one_or_more           = 0x400000,  /* 'then' is only runnable if one or more of it's dependencies are too */
     pe_order_anti_colocation       = 0x800000,
 
     pe_order_preserve              = 0x1000000, /* Hack for breaking user ordering constraints with container resources */

@@ -90,6 +90,21 @@ native_add_running(resource_t * rsc, node_t * node, pe_working_set_t * data_set)
             case recovery_block:
                 clear_bit(rsc->flags, pe_rsc_managed);
                 set_bit(rsc->flags, pe_rsc_block);
+
+                /* If the group that the resource belongs to is configured with multiple-active=block, */
+                /* block the whole group. */
+                if (rsc->parent
+                    && rsc->parent->variant == pe_group
+                    && rsc->parent->recovery_type == recovery_block) {
+                    GListPtr gIter = rsc->parent->children;
+
+                    for (; gIter != NULL; gIter = gIter->next) {
+                        resource_t *child = (resource_t *) gIter->data;
+
+                        clear_bit(child->flags, pe_rsc_managed);
+                        set_bit(child->flags, pe_rsc_block);
+                    }
+                }
                 break;
         }
         crm_debug("%s is active on %d nodes including %s: %s",
@@ -331,7 +346,11 @@ native_pending_task(resource_t * rsc)
     } else if (safe_str_eq(rsc->pending_task, CRMD_ACTION_STATUS)) {
         pending_task = "Monitoring";
 
-    /* Comment this out until someone requests it */
+    /* Pending probes are not printed, even if pending
+     * operations are requested. If someone ever requests that
+     * behavior, uncomment this and the corresponding part of
+     * unpack.c:unpack_rsc_op().
+     */
     /*
     } else if (safe_str_eq(rsc->pending_task, "probe")) {
         pending_task = "Checking";

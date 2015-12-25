@@ -59,4 +59,14 @@ gboolean cancel_recurring_action(svc_action_t * op);
 gboolean recurring_action_timer(gpointer data);
 gboolean operation_finalize(svc_action_t * op);
 
+void services_add_inflight_op(svc_action_t *op);
+
+void handle_blocked_ops(void);
+
+gboolean is_op_blocked(const char *rsc);
+
+#if SUPPORT_DBUS
+void services_set_op_pending(svc_action_t *op, DBusPendingCall *pending);
+#endif
+
 #endif                          /* __MH_SERVICES_PRIVATE_H__ */

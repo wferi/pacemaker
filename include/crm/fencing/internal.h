@@ -42,8 +42,10 @@ int
 
 gboolean is_redhat_agent(const char *agent);
 
-xmlNode *create_level_registration_xml(const char *node, int level,
-                                       stonith_key_value_t * device_list);
+xmlNode *create_level_registration_xml(const char *node, const char *pattern,
+                                       const char *attr, const char *value,
+                                       int level,
+                                       stonith_key_value_t *device_list);
 
 xmlNode *create_device_registration_xml(const char *id, const char *namespace, const char *agent,
                                         stonith_key_value_t * params, const char *rsc_provides);
@@ -63,6 +65,8 @@ xmlNode *create_device_registration_xml(const char *id, const char *namespace, c
 #  define F_STONITH_TOLERANCE     "st_tolerance"
 /*! Action specific timeout period returned in query of fencing devices. */
 #  define F_STONITH_ACTION_TIMEOUT       "st_action_timeout"
+/*! Host in query result is not allowed to run this action */
+#  define F_STONITH_ACTION_DISALLOWED     "st_action_disallowed"
 /*! Maximum of random fencing delay for a device */
 #  define F_STONITH_DELAY_MAX            "st_delay_max"
 /*! Has this device been verified using a monitor type
@@ -70,6 +74,8 @@ xmlNode *create_device_registration_xml(const char *id, const char *namespace, c
 #  define F_STONITH_DEVICE_VERIFIED   "st_monitor_verified"
 /*! device is required for this action */
 #  define F_STONITH_DEVICE_REQUIRED   "st_required"
+/*! number of available devices in query result */
+#  define F_STONITH_AVAILABLE_DEVICES "st-available-devices"
 #  define F_STONITH_CALLBACK_TOKEN    "st_async_id"
 #  define F_STONITH_CLIENTNAME        "st_clientname"
 #  define F_STONITH_CLIENTNODE        "st_clientnode"
@@ -85,7 +91,6 @@ xmlNode *create_device_registration_xml(const char *id, const char *namespace, c
 #  define F_STONITH_HISTORY_LIST  "st_history"
 #  define F_STONITH_DATE          "st_date"
 #  define F_STONITH_STATE         "st_state"
-#  define F_STONITH_LEVEL         "st_level"
 #  define F_STONITH_ACTIVE        "st_active"
 
 #  define F_STONITH_DEVICE        "st_device_id"
