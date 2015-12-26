@@ -115,7 +115,7 @@ Depends: ${misc:Depends},
  libcrmservice3 (= ${binary:Version}),
  liblrmd1 (= ${binary:Version}),
  libpe-rules2 (= ${binary:Version}),
- libpe-status4 (= ${binary:Version}),
+ libpe-status10 (= ${binary:Version}),
  libpengine4 (= ${binary:Version}),
  libstonithd2 (= ${binary:Version}),
  libtransitioner2 (= ${binary:Version}),
@@ -318,7 +318,7 @@ Description: Pacemaker libraries - rules for P-Engine
  intend to run pacemaker. Specifically, this package contains the
  PEngine rules library.
 
-Package: libpe-status4
+Package: libpe-status10
 Architecture: any
 Multi-Arch: same
 Section: libs
@@ -353,7 +353,7 @@ Depends: ${misc:Depends},
  ${header:Depends},
  libpengine4 (= ${binary:Version}),
  libpe-rules2 (= ${binary:Version}),
- libpe-status4 (= ${binary:Version})
+ libpe-status10 (= ${binary:Version})
 # crm/pengine/*.h moved in
 Replaces: libpengine3-dev,
  libpengine4-dev

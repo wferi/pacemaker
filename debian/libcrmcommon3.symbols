@@ -21,6 +21,7 @@ libcrmcommon.so.3 libcrmcommon3 #MINVER#
  check_boolean@Base 1.1.9
  check_number@Base 1.1.9
  check_quorum@Base 1.1.13
+ check_script@Base 1.1.14~rc4
  check_time@Base 1.1.9
  check_timer@Base 1.1.9
  check_utilization@Base 1.1.11
@@ -72,6 +73,7 @@ libcrmcommon.so.3 libcrmcommon3 #MINVER#
  crm_enable_blackbox@Base 1.1.9
  crm_enable_stderr@Base 1.1.9
  crm_exit@Base 1.1.9
+ crm_foreach_xpath_result@Base 1.1.14~rc4
  crm_generate_uuid@Base 1.1.9
  crm_get_interval@Base 1.1.9
  crm_get_msec@Base 1.1.9
@@ -122,6 +124,8 @@ libcrmcommon.so.3 libcrmcommon3 #MINVER#
  crm_parse_int@Base 1.1.9
  crm_pid_active@Base 1.1.9
  crm_pidfile_inuse@Base 1.1.13
+ crm_procfs_pid_of@Base 1.1.14~rc4
+ crm_procfs_process_info@Base 1.1.14~rc4
  crm_read_contents@Base 1.1.13
  crm_read_pidfile@Base 1.1.13
  crm_remote_parse_buffer@Base 1.1.9
@@ -188,18 +192,21 @@ libcrmcommon.so.3 libcrmcommon3 #MINVER#
  daemon_option_enabled@Base 1.1.9
  decode_transition_key@Base 1.1.9
  decode_transition_magic@Base 1.1.9
+ dedupXpathResults@Base 1.1.14~rc4
  determine_request_user@Base 1.1.12
  did_rsc_op_fail@Base 1.1.9
  diff_filter_context@Base 1.1.9
  diff_xml_object@Base 1.1.9
  do_stderr@Base 1.1.9
  dump_xml_formatted@Base 1.1.9
+ dump_xml_formatted_with_text@Base 1.1.14~rc4
  dump_xml_unformatted@Base 1.1.9
  expand_idref@Base 1.1.9
  expand_plus_plus@Base 1.1.9
  filename2xml@Base 1.1.9
  filter_action_parameters@Base 1.1.9
- filter_reload_parameters@Base 1.1.9
+# internal function removed by 38f38c0
+#MISSING: 1.1.14~rc1# filter_reload_parameters@Base 1.1.9
  find_entity@Base 1.1.9
  find_library_function@Base 1.1.9
  find_xml_children@Base 1.1.9
@@ -278,6 +285,7 @@ libcrmcommon.so.3 libcrmcommon3 #MINVER#
  node_score_yellow@Base 1.1.9
  parse_date@Base 1.1.9
  parse_op_key@Base 1.1.9
+ patchset_process_digest@Base 1.1.14~rc4
  pcmk_acl_required@Base 1.1.12
  pcmk_errorname@Base 1.1.10
  pcmk_locate_sbd@Base 1.1.13

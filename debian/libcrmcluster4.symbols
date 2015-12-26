@@ -29,11 +29,13 @@ libcrmcluster.so.4 libcrmcluster4 #MINVER#
  crm_peer_seq@Base 1.1.10
  crm_peer_uname@Base 1.1.10
  crm_peer_uuid@Base 1.1.10
+ crm_reap_unseen_nodes@Base 1.1.14~rc4
  crm_remote_peer_cache@Base 1.1.11
  crm_remote_peer_cache_add@Base 1.1.11
  crm_remote_peer_cache_refresh@Base 1.1.11
  crm_remote_peer_cache_remove@Base 1.1.11
  crm_remote_peer_cache_size@Base 1.1.11
+ crm_set_autoreap@Base 1.1.14~rc4
  crm_set_status_callback@Base 1.1.10
  crm_status_callback@Base 1.1.10
  crm_terminate_member@Base 1.1.10
@@ -42,6 +44,7 @@ libcrmcluster.so.4 libcrmcluster4 #MINVER#
  crm_update_peer_expected@Base 1.1.10
  crm_update_peer_proc@Base 1.1.10
  crm_update_peer_state@Base 1.1.10
+ crm_update_peer_uname@Base 1.1.14~rc4
  cs_message_queue@Base 1.1.10
  cs_message_timer@Base 1.1.10
  election_check@Base 1.1.11

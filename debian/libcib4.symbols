@@ -7,6 +7,7 @@ libcib.so.4 libcib4 #MINVER#
  cib_client_add_notify_callback@Base 1.1.12
  cib_client_del_notify_callback@Base 1.1.12
  cib_client_register_callback@Base 1.1.12
+ cib_client_register_callback_full@Base 1.1.14~rc4
  cib_client_set_op_callback@Base 1.1.12
  cib_compare_generation@Base 1.1.12
  cib_config_changed@Base 1.1.12
