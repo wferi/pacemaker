@@ -1,0 +1,21 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sun, 3 Jan 2016 23:20:04 +0100
+Subject: Fix typo: Retreived -> Retrieved
+
+---
+ crmd/lrm.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/crmd/lrm.c b/crmd/lrm.c
+index e69f389..a73b2a9 100644
+--- a/crmd/lrm.c
++++ b/crmd/lrm.c
+@@ -504,7 +504,7 @@ get_rsc_metadata(const char *type, const char *rclass, const char *provider, boo
+ 
+     if(metadata == NULL) {
+         rc = lrm_state_get_metadata(lrm_state, rclass, provider, type, &metadata, 0);
+-        crm_trace("Retreived live metadata for %s: %s (%d)", key, pcmk_strerror(rc), rc);
++        crm_trace("Retrieved live metadata for %s: %s (%d)", key, pcmk_strerror(rc), rc);
+         if(rc == pcmk_ok) {
+             CRM_LOG_ASSERT(metadata != NULL);
+             g_hash_table_insert(metadata_hash, key, metadata);

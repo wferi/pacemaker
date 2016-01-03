@@ -11,3 +11,5 @@ Fix-typo-doesnt-doesn-t.patch
 Libraries-go-after-linker-flags.patch
 Clean-up-generated-files.patch
 Fix-typos-dependan-dependen.patch
+Fix-typo-Retreived-Retrieved.patch
+Fix-typo-occured-occurred.patch
