@@ -104,37 +104,6 @@ Description: Pacemaker add-on to control virtualized services
  available without running a separate pacemaker cluster, you will
  need this package.
 
-Package: pacemaker-dbg
-Architecture: any
-Section: debug
-Priority: extra
-Depends: ${misc:Depends},
- libcib4 (= ${binary:Version}),
- libcrmcluster4 (= ${binary:Version}),
- libcrmcommon3 (= ${binary:Version}),
- libcrmservice3 (= ${binary:Version}),
- liblrmd1 (= ${binary:Version}),
- libpe-rules2 (= ${binary:Version}),
- libpe-status10 (= ${binary:Version}),
- libpengine4 (= ${binary:Version}),
- libstonithd2 (= ${binary:Version}),
- libtransitioner2 (= ${binary:Version}),
- pacemaker (= ${binary:Version}),
- pacemaker-cli-utils (= ${binary:Version}),
- pacemaker-remote (= ${binary:Version})
-Description: Debugging symbols for Pacemaker
- High-Availability cluster resource manager for Corosync.
- .
- Pacemaker supports a very sophisticated dependency model for
- n-node clusters and can respond to node and resource-level
- failures.
- .
- Since Corosync handles quorum all on its own, and is RHEL's
- recommended stack, pacemaker supports the Corosync cluster
- stack.
- .
- This package contains the debugging symbols for Pacemaker.
-
 Package: pacemaker-doc
 Section: doc
 Architecture: all
