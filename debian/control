@@ -300,7 +300,7 @@ Description: Pacemaker libraries - status for P-Engine
  intend to run pacemaker. Specifically, this package contains the
  PEngine status library.
 
-Package: libpengine4
+Package: libpengine10
 Architecture: any
 Multi-Arch: same
 Section: libs
@@ -320,7 +320,7 @@ Section: libdevel
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
  ${header:Depends},
- libpengine4 (= ${binary:Version}),
+ libpengine10 (= ${binary:Version}),
  libpe-rules2 (= ${binary:Version}),
  libpe-status10 (= ${binary:Version})
 # crm/pengine/*.h moved in
