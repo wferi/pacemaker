@@ -1,7 +1,7 @@
 libpe_status.so.4 libpe-status4 #MINVER#
 * Build-Depends-Package: libpengine-dev
- __start___verbose@Base 1.1.9
- __stop___verbose@Base 1.1.9
+ (optional)__start___verbose@Base 1.1.9
+ (optional)__stop___verbose@Base 1.1.9
  add_hash_param@Base 1.1.9
  add_node_attrs@Base 1.1.9
  add_tag_ref@Base 1.1.12
@@ -88,8 +88,8 @@ libpe_status.so.4 libpe-status4 #MINVER#
  pe_metadata@Base 1.1.9
  pe_opts@Base 1.1.9
  pe_pref@Base 1.1.9
- pe_rules@Base 1.1.9
- pe_status@Base 1.1.9
+ (optional)pe_rules@Base 1.1.9
+ (optional)pe_status@Base 1.1.9
  print_node@Base 1.1.9
  print_resource@Base 1.1.9
  print_rscs_brief@Base 1.1.12
