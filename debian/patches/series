@@ -13,3 +13,4 @@ Clean-up-generated-files.patch
 Fix-typos-dependan-dependen.patch
 Fix-typo-Retreived-Retrieved.patch
 Fix-typo-occured-occurred.patch
+crm_resource-avoid-printing-uninitialized-memory.patch
