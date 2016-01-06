@@ -1,7 +1,7 @@
 libcrmservice.so.3 libcrmservice3 #MINVER#
 * Build-Depends-Package: libcrmservice-dev
- __start___verbose@Base 1.1.13
- __stop___verbose@Base 1.1.13
+ (!powerpc !ppc64 !ppc64el)__start___verbose@Base 1.1.13
+ (!powerpc !ppc64 !ppc64el)__stop___verbose@Base 1.1.13
  blocked_ops@Base 1.1.14~rc4
  cancel_recurring_action@Base 1.1.13
  get_directory_list@Base 1.1.13

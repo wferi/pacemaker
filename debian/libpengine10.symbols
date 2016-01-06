@@ -12,8 +12,8 @@ libpengine.so.10 libpengine10 #MINVER#
  RoleError@Base 1.1.14~rc4
  StartRsc@Base 1.1.14~rc4
  StopRsc@Base 1.1.14~rc4
- (optional)__start___verbose@Base 1.1.14~rc4
- (optional)__stop___verbose@Base 1.1.14~rc4
+ (!powerpc !ppc64 !ppc64el)__start___verbose@Base 1.1.14~rc4
+ (!powerpc !ppc64 !ppc64el)__stop___verbose@Base 1.1.14~rc4
  calculate_utilization@Base 1.1.14~rc4
  can_run_any@Base 1.1.14~rc4
  can_run_resources@Base 1.1.14~rc4
@@ -79,7 +79,7 @@ libpengine.so.10 libpengine10 #MINVER#
  native_update_actions@Base 1.1.14~rc4
  new_rsc_order@Base 1.1.14~rc4
  node_hash_dup@Base 1.1.14~rc4
- (optional)pe_allocate@Base 1.1.14~rc4
+ (!powerpc !ppc64 !ppc64el)pe_allocate@Base 1.1.14~rc4
  pe_free_ordering@Base 1.1.14~rc4
  pe_free_rsc_to_node@Base 1.1.14~rc4
  probe_resources@Base 1.1.14~rc4
