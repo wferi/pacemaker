@@ -1,11 +1,11 @@
 libcrmcluster.so.4 libcrmcluster4 #MINVER#
 * Build-Depends-Package: libcrmcluster-dev
- (!powerpc !ppc64 !ppc64el)__start___verbose@Base 1.1.10
- (!powerpc !ppc64 !ppc64el)__stop___verbose@Base 1.1.10
+ (arch=!powerpc !ppc64 !ppc64el)__start___verbose@Base 1.1.10
+ (arch=!powerpc !ppc64 !ppc64el)__stop___verbose@Base 1.1.10
  ais_membership_force@Base 1.1.10
  ais_membership_timer@Base 1.1.10
  check_message_sanity@Base 1.1.10
- (!powerpc !ppc64 !ppc64el)cluster@Base 1.1.10
+ (arch=!powerpc !ppc64 !ppc64el)cluster@Base 1.1.10
  cluster_connect_cpg@Base 1.1.10
  cluster_connect_quorum@Base 1.1.10
  cluster_disconnect_cpg@Base 1.1.10
