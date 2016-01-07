@@ -24,7 +24,7 @@ override_dh_autoreconf:
 	dh_autoreconf --as-needed autoreconf -- -vif -Wno-portability
 
 override_dh_auto_configure:
-	dh_auto_configure -- --disable-fatal-warnings \
+	dh_auto_configure -- \
 	    --disable-static \
 	    --libdir=/usr/lib/$(DEB_HOST_MULTIARCH)
 
