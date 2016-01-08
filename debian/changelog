@@ -1,3 +1,10 @@
+pacemaker (1.1.14~rc4-2) unstable; urgency=medium
+
+  [ Ferenc Wágner ]
+  * Fix debian/check_header_deps.
+
+ -- Christoph Berg <myon@debian.org>  Fri, 08 Jan 2016 15:46:07 +0100
+
 pacemaker (1.1.14~rc4-1) unstable; urgency=medium
 
   * [462bed4] Correct systemd build dependency.

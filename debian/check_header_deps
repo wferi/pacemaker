@@ -3,17 +3,20 @@
 cd debian
 
 pkgs=$(grep-dctrl -sPackage -n -FSection libdevel control)
+DEB_HOST_MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 for p in $pkgs; do
-    includes="$includes -I $p/usr/include/$1"
+    includes="$includes -I $p/usr/include/$1 -I $p/usr/include/$DEB_HOST_MULTIARCH"
 done
 
 for pkg in $pkgs; do
   {
-    printf 'header:Depends='
     for header in $(find "$pkg" -name "*.h"); do
-        gcc -MM -MT '' -E $includes $header
-    done | sed "s|^:||;s|^ *||;\|^$pkg/|d;s|/.*| (= \${binary:Version}),|" | sort -u | tr '\n' ' '
-    printf '\n'
-  } >>"$pkg.substvars"
+        gcc -MM -MT "$pkg" -E $includes $header
+    done
+    printf '\t%s\n' '$(info header:Depends= \
+$(foreach pkg,$(sort $(filter-out $@, \
+		$(foreach dep,$^,$(firstword $(subst /, ,$(dep)))))) \
+	,$(pkg) (= $${binary:Version}),))'
+  } | make -Bsf - >>"$pkg.substvars"
 done
