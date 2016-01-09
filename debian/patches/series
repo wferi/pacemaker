@@ -5,3 +5,4 @@ Synchronize-the-provided-name-with-the-filename.patch
 Add-description-to-the-pacemaker_remote-RA-for-prope.patch
 Restarting-pacemaker-adds-confusion-only.patch
 Enable-redirecting-etc-init.d-script-calls-to-system.patch
+Don-t-override-a-libdir-containing.patch

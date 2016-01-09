@@ -1,0 +1,21 @@
+From: =?utf-8?q?Ferenc_W=C3=A1gner?= <wferi@niif.hu>
+Date: Sat, 9 Jan 2016 19:57:35 +0100
+Subject: Don't override a libdir containing
+
+---
+ configure.ac |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index b9a863a..1d1dc3d 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -378,7 +378,7 @@ AC_SUBST(INITDIR)
+ AC_MSG_NOTICE(Sanitizing libdir: ${libdir})
+ case $libdir in
+   dnl For consistency with Heartbeat, map NONE->$prefix
+-  *prefix*|NONE)
++  prefix|NONE)
+     AC_MSG_CHECKING(which lib directory to use)
+     for aDir in lib64 lib
+     do
