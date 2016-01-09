@@ -54,7 +54,7 @@ AC_ARG_WITH(pkg-name,
     [ PACKAGE_NAME="$withval" ])
 
 dnl Older distros may need: AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 AC_DEFINE_UNQUOTED(PACEMAKER_VERSION, "$PACKAGE_VERSION", Current pacemaker version)
 
 PACKAGE_SERIES=`echo $PACKAGE_VERSION | awk -F. '{ print $1"."$2 }'`
@@ -463,7 +463,7 @@ esac
 
 dnl Eventually remove this
 if test "$cross_compiling" != "yes"; then
-   CFLAGS="$CFLAGS -I${prefix}/include/heartbeat"
+   CPPFLAGS="$CPPFLAGS -I${prefix}/include/heartbeat"
 fi
 
 AC_SUBST(INIT_EXT)
@@ -1028,20 +1028,20 @@ if test x${enable_no_stack} = xyes; then
     SUPPORT_CS=no
 fi
 
-PKG_CHECK_MODULES(libqb, libqb, HAVE_libqb=1, HAVE_libqb=0)
+SAVE_CPPFLAGS="$CPPFLAGS"
+SAVE_LIBS="$LIBS"
+PKG_CHECK_MODULES(libqb, libqb >= 0.13, HAVE_libqb=1, HAVE_libqb=0)
+CPPFLAGS="$CPPFLAGS $libqb_CFLAGS"
+LIBS="$LIBS $libqb_LIBS"
 AC_CHECK_HEADERS(qb/qbipc_common.h)
 AC_CHECK_LIB(qb, qb_ipcs_connection_auth_set)
+CPPFLAGS="$SAVE_CPPFLAGS"
+LIBS="$SAVE_LIBS"
 
 LIBQB_LOG=1
 PCMK_FEATURES="$PCMK_FEATURES libqb-logging libqb-ipc"
 
 AC_CHECK_FUNCS(qb_ipcs_connection_get_buffer_size, AC_DEFINE(HAVE_IPCS_GET_BUFFER_SIZE,  1, [Have qb_ipcc_get_buffer_size function]))
-
-if
-   ! pkg-config --atleast-version 0.13 libqb
-then
-   AC_MSG_FAILURE(Version of libqb is too old: v0.13 or greater requried)
-fi
 
 LIBS="$LIBS $libqb_LIBS"
 
@@ -1161,7 +1161,7 @@ AC_DEFINE_UNQUOTED(RH_STONITH_PREFIX,"$RH_STONITH_PREFIX", Prefix for Red Hat St
 AC_PATH_PROGS(GIT, git false)
 AC_MSG_CHECKING(build version)
 
-BUILD_VERSION=89d36bc
+BUILD_VERSION=36ff430
 if test $BUILD_VERSION != ":%h$"; then
    AC_MSG_RESULT(archive hash: $BUILD_VERSION)
 

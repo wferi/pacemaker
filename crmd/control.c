@@ -41,13 +41,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-/* Enable support for built-in notifications
- *
- * The interface is expected to change significantly, and this will be defined
- * in the upstream master branch only until a new design is finalized.
- */
-#define RHEL7_COMPAT
-
 qb_ipcs_service_t *ipcs = NULL;
 
 extern gboolean crm_connect_corosync(crm_cluster_t * cluster);
@@ -203,7 +196,7 @@ do_shutdown(long long action,
     }
 
     if (stonith_api) {
-        /* Prevent it from comming up again */
+        /* Prevent it from coming up again */
         clear_bit(fsa_input_register, R_ST_REQUIRED);
 
         crm_info("Disconnecting STONITH...");
@@ -1147,7 +1140,7 @@ crm_shutdown(int nsig)
                 shutdown_escalation_timer->period_ms = msec;
             }
 
-            /* cant rely on this... */
+            /* can't rely on this... */
             crm_notice("Requesting shutdown, upper limit is %dms",
                        shutdown_escalation_timer->period_ms);
             crm_timer_start(shutdown_escalation_timer);

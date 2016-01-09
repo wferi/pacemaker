@@ -1446,7 +1446,7 @@ class ComponentFail(CTSTest):
                     if r.rclass == "stonith":
                         self.okerrpatterns.append(self.templates["Pat:Fencing_recover"] % r.id)
 
-        # supply a copy so self.patterns doesnt end up empty
+        # supply a copy so self.patterns doesn't end up empty
         tmpPats = []
         tmpPats.extend(self.patterns)
         self.patterns.extend(chosen.badnews_ignore)
@@ -3093,8 +3093,8 @@ class RemoteStonithd(RemoteDriver):
     def errorstoignore(self):
         ignore_pats = [
             r"Unexpected disconnect on remote-node",
-            r"crmd.*: error.*: Operation remote_.*_monitor",
-            r"pengine.*: Recover remote_.*\s*\(.*\)",
+            r"crmd.*:\s+error.*: Operation remote_.*_monitor",
+            r"pengine.*:\s+Recover remote_.*\s*\(.*\)",
             r"Calculated Transition .* /var/lib/pacemaker/pengine/pe-error",
             r"error.*: Resource .*ocf::.* is active on 2 nodes attempting recovery",
         ]

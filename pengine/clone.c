@@ -90,7 +90,7 @@ sort_clone_instance(gconstpointer a, gconstpointer b, gpointer data_set)
     /* allocation order:
      *  - active instances
      *  - instances running on nodes with the least copies
-     *  - active instances on nodes that cant support them or are to be fenced
+     *  - active instances on nodes that can't support them or are to be fenced
      *  - failed instances
      *  - inactive instances
      */
@@ -411,7 +411,7 @@ color_instance(resource_t * rsc, node_t * prefer, gboolean all_coloc, pe_working
         return NULL;
     }
 
-    /* Only include positive colocation preferences of dependant resources
+    /* Only include positive colocation preferences of dependent resources
      * if not every node will get a copy of the clone
      */
     append_parent_colocation(rsc->parent, rsc, all_coloc);
