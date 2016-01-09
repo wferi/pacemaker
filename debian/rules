@@ -12,7 +12,7 @@ export DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs
 export DEB_LDFLAGS_MAINT_APPEND+=-Wl,--as-needed
 
 %:
-	dh $@ --with autoreconf,systemd
+	dh $@ --parallel --with autoreconf,systemd
 
 # autoreconf options taken from autogen.sh
 # without symlink usage (-s) to make --as-needed effective
