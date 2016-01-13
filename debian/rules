@@ -38,7 +38,7 @@ override_dh_install:
 	dh_install --fail-missing --exclude=.la --exclude=.md5 \
 		--exclude COPYING --exclude COPYING.LIB
 	install -D -m 644 mcp/pacemaker.sysconfig debian/pacemaker/etc/default/pacemaker
-	env -u MAKELEVEL -u MAKEFLAGS -u MFLAGS debian/check_header_deps pacemaker
+	debian/check_header_deps pacemaker
 
 override_dh_installchangelogs:
 	dh_installchangelogs ChangeLog
