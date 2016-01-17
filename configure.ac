@@ -378,7 +378,7 @@ AC_SUBST(INITDIR)
 AC_MSG_NOTICE(Sanitizing libdir: ${libdir})
 case $libdir in
   dnl For consistency with Heartbeat, map NONE->$prefix
-  *prefix*|NONE)
+  prefix|NONE)
     AC_MSG_CHECKING(which lib directory to use)
     for aDir in lib64 lib
     do
@@ -1161,7 +1161,7 @@ AC_DEFINE_UNQUOTED(RH_STONITH_PREFIX,"$RH_STONITH_PREFIX", Prefix for Red Hat St
 AC_PATH_PROGS(GIT, git false)
 AC_MSG_CHECKING(build version)
 
-BUILD_VERSION=36ff430
+BUILD_VERSION=70404b0
 if test $BUILD_VERSION != ":%h$"; then
    AC_MSG_RESULT(archive hash: $BUILD_VERSION)
 
