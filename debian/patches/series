@@ -4,5 +4,4 @@ Debianize-pacemaker_remote.service.patch
 Synchronize-the-provided-name-with-the-filename.patch
 Restarting-pacemaker-adds-confusion-only.patch
 Enable-redirecting-etc-init.d-script-calls-to-system.patch
-Don-t-override-a-libdir-containing.patch
 Extend-the-description-of-the-remote-agent-script.patch
