@@ -1,3 +1,20 @@
+pacemaker (1.1.14-1) unstable; urgency=medium
+
+  * [4cae0b4] New upstream release candidate (1.1.14~rc4)
+  * [30980dc] Delete upstreamed patches
+  * [43883ae] The debug package overrides are not needed with automatic debug
+    packages
+  * [356a33e] Stop disabling -Werror
+  * [286053e] New patch Don-t-override-a-libdir-containing.patch
+  * [0cc1142] Enable parallel builds
+  * [03f18e2] Rewrite debian/check_header_deps
+  * [ac34441] Replace remote RA description patch with upstream proposal
+  * [b4ddc03] New upstream release (1.1.14)
+  * [cf25e77] Delete upstreamed patch
+  * [fdbb9ab] Delete rejected RA description patch
+
+ -- Ferenc Wágner <wferi@niif.hu>  Sat, 23 Jan 2016 21:42:03 +0100
+
 pacemaker (1.1.14~rc4-2) unstable; urgency=medium
 
   [ Ferenc Wágner ]
