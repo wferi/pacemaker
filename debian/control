@@ -62,6 +62,11 @@ Recommends: fence-agents,
  pacemaker-cli-utils,
 Suggests: cluster-glue,
  crmsh | pcs
+# we moved the dummy RA script and its man page into pacemaker (#813008):
+Breaks:
+ pacemaker-remote (<< 1.1.14-2~)
+Replaces:
+ pacemaker-remote (<< 1.1.14-2~)
 Description: HA cluster resource manager
  High-Availability cluster resource manager for Corosync.
  .
