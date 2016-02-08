@@ -55,10 +55,11 @@ Architecture: any
 Depends: ${shlibs:Depends},
  ${misc:Depends},
  adduser,
- corosync (>= 1.99)
+ corosync (>= 1.99),
+# the bundled resource agents need the generic infrastructure (#813009):
+ resource-agents,
 Recommends: fence-agents,
  pacemaker-cli-utils,
- resource-agents
 Suggests: cluster-glue,
  crmsh | pcs
 Description: HA cluster resource manager
