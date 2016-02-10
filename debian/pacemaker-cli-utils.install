@@ -1,11 +1,9 @@
 usr/sbin/cibadmin
-usr/sbin/crm_attribute
 usr/sbin/crm_diff
 usr/sbin/crm_error
 usr/sbin/crm_failcount
 usr/sbin/crm_master
 usr/sbin/crm_mon
-usr/sbin/crm_node
 usr/sbin/crm_report
 usr/sbin/crm_resource
 usr/sbin/crm_shadow
@@ -16,13 +14,11 @@ usr/sbin/crm_verify
 usr/sbin/crmadmin
 usr/sbin/iso8601
 usr/share/man/man8/cibadmin.8
-usr/share/man/man8/crm_attribute.8
 usr/share/man/man8/crm_diff.8
 usr/share/man/man8/crm_error.8
 usr/share/man/man8/crm_failcount.8
 usr/share/man/man8/crm_master.8
 usr/share/man/man8/crm_mon.8
-usr/share/man/man8/crm_node.8
 usr/share/man/man8/crm_report.8
 usr/share/man/man8/crm_resource.8
 usr/share/man/man8/crm_shadow.8

@@ -100,8 +100,12 @@ Suggests:
  crmsh | pcs,
 Breaks:
  pacemaker-remote,
-# we moved the dummy remote RA script and its man page into pacemaker:
+# pulled in crm_attribute and crm_node, because they depend on the
+# cluster-layer libraries:
+ pacemaker-cli-utils (<< 1.1.14-2~),
 Replaces:
+ pacemaker-cli-utils (<< 1.1.14-2~),
+# we moved the dummy remote RA script and its man page into pacemaker:
  pacemaker-remote (<< 1.1.14-2~),
 Description: cluster resource manager
  ${DESCRIPTION}
