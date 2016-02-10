@@ -2,21 +2,22 @@ Source: pacemaker
 Section: admin
 Priority: optional
 Maintainer: Debian HA Maintainers <debian-ha-maintainers@lists.alioth.debian.org>
-Uploaders: Martin Loschwitz <madkiss@debian.org>,
+Uploaders:
+ Martin Loschwitz <madkiss@debian.org>,
  Anibal Monsalve Salazar <anibal@debian.org>,
  Simon Horman <horms@debian.org>,
  Frederik Schüler <fs@debian.org>,
  Richard B Winters <rik@mmogp.com>,
  Ferenc Wágner <wferi@niif.hu>,
- Christoph Berg <myon@debian.org>
-Build-Depends: debhelper (>= 9),
- dh-autoreconf,
+ Christoph Berg <myon@debian.org>,
+Build-Depends:
+ asciidoc,
  cluster-glue-dev,
+ dctrl-tools,
+ debhelper (>= 9),
+ dh-autoreconf,
  dh-exec,
  dh-systemd,
- dctrl-tools,
- asciidoc,
- publican,
  docbook-xsl,
  doxygen,
  graphviz,
@@ -26,8 +27,8 @@ Build-Depends: debhelper (>= 9),
  libcfg-dev (>= 1.99),
  libcmap-dev (>= 1.99),
  libcpg-dev (>= 1.99),
- libesmtp-dev,
  libdbus-1-dev,
+ libesmtp-dev,
  libglib2.0-dev,
  libgnutls28-dev,
  libltdl-dev,
@@ -38,13 +39,14 @@ Build-Depends: debhelper (>= 9),
 # net-snmp-config --agent-libs contains -lsensors in sid on 2015-09-15
  libsensors4-dev,
  libsnmp-dev,
- systemd,
  libxml2-dev,
  libxml2-utils,
  libxslt1-dev,
  pkg-config,
+ publican,
+ systemd,
  uuid-dev,
- xsltproc
+ xsltproc,
 Standards-Version: 3.9.6
 Homepage: http://www.clusterlabs.org/
 Vcs-Git: https://alioth.debian.org/anonscm/git/debian-ha/pacemaker.git
@@ -52,21 +54,24 @@ Vcs-Browser: http://anonscm.debian.org/cgit/debian-ha/pacemaker.git
 
 Package: pacemaker
 Architecture: any
-Depends: ${shlibs:Depends},
- ${misc:Depends},
+Depends:
  adduser,
  corosync (>= 1.99),
 # the bundled resource agents need the generic infrastructure (#813009):
  resource-agents,
-Recommends: fence-agents,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends:
+ fence-agents,
  pacemaker-cli-utils,
-Suggests: cluster-glue,
- crmsh | pcs
+Suggests:
+ cluster-glue,
+ crmsh | pcs,
 # we moved the dummy RA script and its man page into pacemaker (#813008):
 Breaks:
- pacemaker-remote (<< 1.1.14-2~)
+ pacemaker-remote (<< 1.1.14-2~),
 Replaces:
- pacemaker-remote (<< 1.1.14-2~)
+ pacemaker-remote (<< 1.1.14-2~),
 Description: cluster resource manager
  ${DESCRIPTION}
  This package contains the Pacemaker daemons directly interacting with
@@ -74,13 +79,16 @@ Description: cluster resource manager
 
 Package: pacemaker-cli-utils
 Architecture: any
-Depends: ${shlibs:Depends},
+Depends:
+# jessie's init-system-helpers starts our disabled crm_mon service on install
+# and upgrade, see #768456.
+ init-system-helpers (>= 1.23),
  ${misc:Depends},
- init-system-helpers (>= 1.23)
-# ... because << 1.23 starts our disabled crm_mon service on install and
-# upgrade, see #768456.
-Breaks: pacemaker (<< 1.1.9+git20130321-1)
-Replaces: pacemaker (<< 1.1.9+git20130321-1)
+ ${shlibs:Depends},
+Breaks:
+ pacemaker (<< 1.1.9+git20130321-1),
+Replaces:
+ pacemaker (<< 1.1.9+git20130321-1),
 Description: cluster resource manager command line utilities
  ${DESCRIPTION}
  This package contains numerous command line utilities for the
@@ -88,10 +96,12 @@ Description: cluster resource manager command line utilities
 
 Package: pacemaker-remote
 Architecture: any
-Depends: ${shlibs:Depends},
+Depends:
  ${misc:Depends},
-Recommends: pacemaker-cli-utils,
- resource-agents
+ ${shlibs:Depends},
+Recommends:
+ pacemaker-cli-utils,
+ resource-agents,
 Description: cluster resource manager proxy daemon for remote nodes
  ${DESCRIPTION}
  This package contains the Pacemaker proxy daemon, which simulates cluster
@@ -102,7 +112,8 @@ Description: cluster resource manager proxy daemon for remote nodes
 Package: pacemaker-doc
 Section: doc
 Architecture: all
-Depends: ${misc:Depends}
+Depends:
+ ${misc:Depends},
 Description: cluster resource manager HTML documentation
  ${DESCRIPTION}
  This package contains
@@ -115,9 +126,11 @@ Package: libcib4
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager CIB library
  ${DESCRIPTION}
  This package contains the Cluster Information Base library.
@@ -128,13 +141,17 @@ Package: libcib-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends},
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ libcib4 (= ${binary:Version}),
  ${header:Depends},
- libcib4 (= ${binary:Version})
+ ${misc:Depends},
 # util.h moved in
-Replaces: libcib3-dev
-Breaks: libcib3-dev
+Replaces:
+ libcib3-dev,
+Breaks:
+ libcib3-dev,
 Description: cluster resource manager CIB library development
  ${DESCRIPTION}
  This package contains the headers and other necessary files to build
@@ -144,9 +161,11 @@ Package: libcrmcluster4
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager cluster library
  ${DESCRIPTION}
  This package contains the cluster library.
@@ -155,15 +174,19 @@ Package: libcrmcluster-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends},
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ libcrmcluster4 (= ${binary:Version}),
  ${header:Depends},
- libcrmcluster4 (= ${binary:Version})
+ ${misc:Depends},
 # cib.h and other headers moved in
-Replaces: libcrmcluster1-dev,
- libcrmcluster4-dev
-Breaks: libcrmcluster1-dev,
- libcrmcluster4-dev
+Replaces:
+ libcrmcluster1-dev,
+ libcrmcluster4-dev,
+Breaks:
+ libcrmcluster1-dev,
+ libcrmcluster4-dev,
 Description: cluster resource manager cluster library development
  ${DESCRIPTION}
  This package contains the headers and other necessary files to build
@@ -173,9 +196,11 @@ Package: libcrmcommon3
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager common library
  ${DESCRIPTION}
  This package contains the common library.
@@ -184,16 +209,20 @@ Package: libcrmcommon-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends},
- ${header:Depends},
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
  libcrmcommon3 (= ${binary:Version}),
- libtransitioner2 (= ${binary:Version})
+ libtransitioner2 (= ${binary:Version}),
+ ${header:Depends},
+ ${misc:Depends},
 # crm/common/ipc.h and other headers moved in
-Replaces: libcrmcommon2-dev,
- libcrmcommon3-dev
-Breaks: libcrmcommon2-dev,
- libcrmcommon3-dev
+Replaces:
+ libcrmcommon2-dev,
+ libcrmcommon3-dev,
+Breaks:
+ libcrmcommon2-dev,
+ libcrmcommon3-dev,
 Description: cluster resource manager common library development
  ${DESCRIPTION}
  This package contains the headers and other necessary files to build
@@ -203,9 +232,11 @@ Package: libcrmservice3
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager service library
  ${DESCRIPTION}
  This package contains the service library.
@@ -214,10 +245,12 @@ Package: libcrmservice-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends},
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ libcrmservice3 (= ${binary:Version}),
  ${header:Depends},
- libcrmservice3 (= ${binary:Version})
+ ${misc:Depends},
 Description: cluster resource manager service library development
  ${DESCRIPTION}
  This package contains the headers and other necessary files to build
@@ -227,9 +260,11 @@ Package: liblrmd1
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager LRMD library
  ${DESCRIPTION}
  This package contains the Local Resource Manager Daemon library.
@@ -238,13 +273,17 @@ Package: liblrmd-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends},
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ liblrmd1 (= ${binary:Version}),
  ${header:Depends},
- liblrmd1 (= ${binary:Version})
+ ${misc:Depends},
 # lrmd.h moved in
-Breaks: liblrmd1-dev
-Replaces: liblrmd1-dev
+Breaks:
+ liblrmd1-dev,
+Replaces:
+ liblrmd1-dev,
 Description: cluster resource manager LRMD library development
  ${DESCRIPTION}
  This package contains the headers and other necessary files to build
@@ -255,9 +294,11 @@ Package: libpe-rules2
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager Policy Engine rules library
  ${DESCRIPTION}
  This package contains the Policy Engine rules library.
@@ -266,9 +307,11 @@ Package: libpe-status10
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager Policy Engine status library
  ${DESCRIPTION}
  This package contains the Policy Engine status library.
@@ -277,9 +320,11 @@ Package: libpengine10
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager Policy Engine library
  ${DESCRIPTION}
  This package contains the Policy Engine library.
@@ -288,17 +333,21 @@ Package: libpengine-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends},
- ${header:Depends},
- libpengine10 (= ${binary:Version}),
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
  libpe-rules2 (= ${binary:Version}),
- libpe-status10 (= ${binary:Version})
+ libpe-status10 (= ${binary:Version}),
+ libpengine10 (= ${binary:Version}),
+ ${header:Depends},
+ ${misc:Depends},
 # crm/pengine/*.h moved in
-Replaces: libpengine3-dev,
- libpengine4-dev
-Breaks: libpengine3-dev,
- libpengine4-dev
+Replaces:
+ libpengine3-dev,
+ libpengine4-dev,
+Breaks:
+ libpengine3-dev,
+ libpengine4-dev,
 Description: cluster resource manager Policy Engine library development
  ${DESCRIPTION}
  This package contains the headers and other necessary files to build
@@ -308,9 +357,11 @@ Package: libstonithd2
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager STONITH daemon library
  ${DESCRIPTION}
  This package contains the STONITH daemon library.
@@ -319,10 +370,12 @@ Package: libstonithd-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends},
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ libstonithd2 (= ${binary:Version}),
  ${header:Depends},
- libstonithd2 (= ${binary:Version})
+ ${misc:Depends},
 Description: cluster resource manager STONITH daemon library development
  ${DESCRIPTION}
  This package contains the headers and other necessary files to build
@@ -332,9 +385,11 @@ Package: libtransitioner2
 Architecture: any
 Multi-Arch: same
 Section: libs
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends},
- ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: cluster resource manager transitioner library
  ${DESCRIPTION}
  This package contains the transitioner library.

@@ -4,7 +4,7 @@ Source: http://github.com/clusterlabs/pacemaker
 
 Files: *
 Copyright: 1998-2015 Andrew Beekhof <andrew[at]beekhof[dot]net>
-    	             David Vossel <dvossel[at]redhat[dot]com>	
+    	             David Vossel <dvossel[at]redhat[dot]com>
     	             Keisuke MORI <keisuke[dot]mori[at]gmail[dot]com>
     	             Yan Gao <ygao[at]suse[dot]com>
     	             Dan Frîncu <df[dot]cluster[at]gmail[dot]com>
