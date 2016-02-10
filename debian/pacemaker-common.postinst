@@ -13,6 +13,11 @@ if [ "$1" = configure ]; then
             dpkg-statoverride --update --add hacluster haclient 750 "$i"
         fi
     done
+    AUTHKEY=/etc/pacemaker/authkey
+    if ! [ -e "$AUTHKEY" ]; then
+        ( umask 037 && dd if=/dev/urandom of="$AUTHKEY" bs=4096 count=1 )
+        chgrp haclient "$AUTHKEY"
+    fi
 fi
 
 #DEBHELPER#
