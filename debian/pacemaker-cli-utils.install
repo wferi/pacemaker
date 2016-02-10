@@ -1,3 +1,4 @@
+usr/sbin/attrd_updater
 usr/sbin/cibadmin
 usr/sbin/crm_diff
 usr/sbin/crm_error
@@ -13,6 +14,8 @@ usr/sbin/crm_ticket
 usr/sbin/crm_verify
 usr/sbin/crmadmin
 usr/sbin/iso8601
+usr/sbin/stonith_admin
+usr/share/man/man8/attrd_updater.8
 usr/share/man/man8/cibadmin.8
 usr/share/man/man8/crm_diff.8
 usr/share/man/man8/crm_error.8
@@ -28,3 +31,4 @@ usr/share/man/man8/crm_ticket.8
 usr/share/man/man8/crm_verify.8
 usr/share/man/man8/crmadmin.8
 usr/share/man/man8/iso8601.8
+usr/share/man/man8/stonith_admin.8

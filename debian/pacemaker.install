@@ -4,13 +4,11 @@ usr/lib/*/pacemaker
 usr/lib/ocf/resource.d/pacemaker/controld
 usr/lib/ocf/resource.d/pacemaker/o2cb
 usr/lib/ocf/resource.d/pacemaker/remote
-usr/sbin/attrd_updater
 usr/sbin/crm_attribute
 usr/sbin/crm_node
 usr/sbin/fence_legacy
 usr/sbin/fence_pcmk
 usr/sbin/pacemakerd
-usr/sbin/stonith_admin
 usr/share/doc/pacemaker/AUTHORS
 usr/share/doc/pacemaker/acls.html
 usr/share/doc/pacemaker/acls.txt
@@ -22,10 +20,8 @@ usr/share/man/man7/ocf_pacemaker_remote.7
 usr/share/man/man7/pengine.7
 usr/share/man/man7/crmd.7
 usr/share/man/man7/stonithd.7
-usr/share/man/man8/attrd_updater.8
 usr/share/man/man8/crm_attribute.8
 usr/share/man/man8/crm_node.8
 usr/share/man/man8/fence_legacy.8
 usr/share/man/man8/fence_pcmk.8
 usr/share/man/man8/pacemakerd.8
-usr/share/man/man8/stonith_admin.8

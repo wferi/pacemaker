@@ -121,14 +121,15 @@ Depends:
  pacemaker | pacemaker-remote,
  ${misc:Depends},
  ${shlibs:Depends},
+# pulled in attrd_updater and stonith_admin, because they work on remote nodes:
 Breaks:
- pacemaker (<< 1.1.9+git20130321-1),
+ pacemaker (<< 1.1.14-2~),
 Replaces:
- pacemaker (<< 1.1.9+git20130321-1),
+ pacemaker (<< 1.1.14-2~),
 Description: cluster resource manager command line utilities
  ${DESCRIPTION}
- This package contains numerous command line utilities for the
- Pacemaker cluster manager.
+ This package contains those command line utilities of the Pacemaker
+ cluster manager which work on remote nodes as well.
 
 Package: pacemaker-remote
 Architecture: any
