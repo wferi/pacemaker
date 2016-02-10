@@ -4,7 +4,7 @@ Subject: Debianize pacemaker_remote.service
 
 Source /etc/default/pacemaker_remote if exists.
 ---
- lrmd/pacemaker_remote.service.in |    2 +-
+ lrmd/pacemaker_remote.service.in | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/lrmd/pacemaker_remote.service.in b/lrmd/pacemaker_remote.service.in

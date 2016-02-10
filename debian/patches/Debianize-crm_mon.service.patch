@@ -3,7 +3,7 @@ Date: Sun, 13 Sep 2015 19:14:18 +0200
 Subject: Debianize crm_mon.service
 
 ---
- tools/crm_mon.service.in |    2 +-
+ tools/crm_mon.service.in | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tools/crm_mon.service.in b/tools/crm_mon.service.in

@@ -3,8 +3,8 @@ Date: Thu, 17 Dec 2015 10:12:01 +0100
 Subject: Enable redirecting /etc/init.d/$script calls to systemd
 
 ---
- lrmd/pacemaker_remote.in |    4 ++++
- mcp/pacemaker.in         |    4 ++++
+ lrmd/pacemaker_remote.in | 4 ++++
+ mcp/pacemaker.in         | 4 ++++
  2 files changed, 8 insertions(+)
 
 diff --git a/lrmd/pacemaker_remote.in b/lrmd/pacemaker_remote.in

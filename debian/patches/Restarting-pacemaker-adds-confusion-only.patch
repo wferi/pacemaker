@@ -4,7 +4,7 @@ Subject: Restarting pacemaker adds confusion only
 
 Usually fencing is imminent anyway.
 ---
- mcp/pacemaker.service.in |    3 ---
+ mcp/pacemaker.service.in | 3 ---
  1 file changed, 3 deletions(-)
 
 diff --git a/mcp/pacemaker.service.in b/mcp/pacemaker.service.in

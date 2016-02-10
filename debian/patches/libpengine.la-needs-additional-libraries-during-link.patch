@@ -3,7 +3,7 @@ Date: Sun, 13 Sep 2015 19:14:18 +0200
 Subject: libpengine.la needs additional libraries during linking
 
 ---
- pengine/Makefile.am |    2 +-
+ pengine/Makefile.am | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/pengine/Makefile.am b/pengine/Makefile.am

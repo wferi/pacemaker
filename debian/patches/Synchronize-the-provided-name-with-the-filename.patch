@@ -9,7 +9,7 @@ correctly. (As Christoph Berg put it very succintly.)
 
 Source /etc/default/pacemaker_remote if exists.
 ---
- lrmd/pacemaker_remote.in |    4 ++--
+ lrmd/pacemaker_remote.in | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/lrmd/pacemaker_remote.in b/lrmd/pacemaker_remote.in
