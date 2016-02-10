@@ -52,24 +52,55 @@ Homepage: http://www.clusterlabs.org/
 Vcs-Git: https://alioth.debian.org/anonscm/git/debian-ha/pacemaker.git
 Vcs-Browser: http://anonscm.debian.org/cgit/debian-ha/pacemaker.git
 
+Package: pacemaker-common
+Architecture: all
+Depends:
+ adduser,
+ ${misc:Depends},
+# The dedicated user and group, and configuration, MIB, RNG and XSL files
+# were pulled out of pacemaker so that pacemaker-remote can also use them:
+Breaks:
+ pacemaker (<< 1.1.14-2~),
+Replaces:
+ pacemaker (<< 1.1.14-2~),
+Description: cluster resource manager common files
+ ${DESCRIPTION}
+ This package contains common infrastructure and data files for the
+ Pacemaker daemons and utilities.
+
+Package: pacemaker-resource-agents
+Architecture: all
+Depends:
+ resource-agents,
+ ${misc:Depends},
+# split out of pacemaker so that pacemaker-remote can also use them:
+Breaks:
+ pacemaker (<< 1.1.14-2~),
+Replaces:
+ pacemaker (<< 1.1.14-2~),
+Description: cluster resource manager general resource agents
+ ${DESCRIPTION}
+ This package contains Pacemaker resource agents not requiring access
+ to the cluster stack, thus also usable by the remote daemon.
+
 Package: pacemaker
 Architecture: any
 Depends:
- adduser,
  corosync (>= 1.99),
-# the bundled resource agents need the generic infrastructure (#813009):
- resource-agents,
+ pacemaker-common,
+ pacemaker-resource-agents,
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
  fence-agents,
  pacemaker-cli-utils,
 Suggests:
+# the fence_legacy helper uses /usr/sbin/stonith from cluster-glue:
  cluster-glue,
  crmsh | pcs,
-# we moved the dummy RA script and its man page into pacemaker (#813008):
 Breaks:
- pacemaker-remote (<< 1.1.14-2~),
+ pacemaker-remote,
+# we moved the dummy remote RA script and its man page into pacemaker:
 Replaces:
  pacemaker-remote (<< 1.1.14-2~),
 Description: cluster resource manager
@@ -83,6 +114,7 @@ Depends:
 # jessie's init-system-helpers starts our disabled crm_mon service on install
 # and upgrade, see #768456.
  init-system-helpers (>= 1.23),
+ pacemaker | pacemaker-remote,
  ${misc:Depends},
  ${shlibs:Depends},
 Breaks:
@@ -97,11 +129,14 @@ Description: cluster resource manager command line utilities
 Package: pacemaker-remote
 Architecture: any
 Depends:
+ pacemaker-common,
+ pacemaker-resource-agents,
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
  pacemaker-cli-utils,
- resource-agents,
+Breaks:
+ pacemaker,
 Description: cluster resource manager proxy daemon for remote nodes
  ${DESCRIPTION}
  This package contains the Pacemaker proxy daemon, which simulates cluster

@@ -1,0 +1,6 @@
+etc/logrotate.d/pacemaker
+usr/share/pacemaker
+usr/share/snmp/mibs/PCMK-MIB.txt
+var/lib/pacemaker/pengine
+var/lib/pacemaker/cib
+var/lib/pacemaker/blackbox
