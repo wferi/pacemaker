@@ -60,6 +60,21 @@ override_dh_systemd_enable:
 override_dh_strip:
 	dh_strip --ddeb-migration='pacemaker-dbg (<< 1.1.14~rc4-1~)'
 
+# Play safe
+.DELETE_ON_ERROR:
+
+DESC_SUBST=debian/description.subst
+
+$(DESC_SUBST): debian/description
+	tr '\n' _ < $< | sed 's/^/DESCRIPTION=/;s/_/$${Newline}/g' >$@
+
+override_dh_gencontrol: $(DESC_SUBST)
+	debian/check_header_deps
+	dh_gencontrol -- -T$<
+
 override_dh_auto_clean:
 	dh_auto_clean
 	rm -rf doc/api
+
+override_dh_clean:
+	dh_clean $(DESC_SUBST)
