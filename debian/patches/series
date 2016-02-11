@@ -6,3 +6,4 @@ Restarting-pacemaker-adds-confusion-only.patch
 Enable-redirecting-etc-init.d-script-calls-to-system.patch
 Fix-typo-existance-existence.patch
 Fix-typo-Initalizing-Initializing.patch
+Drop-misleading-comment-from-config-set-a-does-the-e.patch
