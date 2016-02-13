@@ -47,7 +47,7 @@ Build-Depends:
  systemd,
  uuid-dev,
  xsltproc,
-Standards-Version: 3.9.6
+Standards-Version: 3.9.7
 Homepage: http://www.clusterlabs.org/
 Vcs-Git: https://alioth.debian.org/anonscm/git/debian-ha/pacemaker.git
 Vcs-Browser: https://anonscm.debian.org/cgit/debian-ha/pacemaker.git
