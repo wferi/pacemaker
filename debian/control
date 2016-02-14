@@ -44,7 +44,7 @@ Build-Depends:
  libxslt1-dev,
  pkg-config,
  publican,
- systemd,
+ systemd [linux-any],
  uuid-dev,
  xsltproc,
 Standards-Version: 3.9.7
