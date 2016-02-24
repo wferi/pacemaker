@@ -2,7 +2,7 @@
 
 etc/init.d/pacemaker
 lib/systemd/system/pacemaker.service [linux-any]
-usr/lib/*/pacemaker
+usr/lib/pacemaker
 usr/lib/ocf/resource.d/pacemaker/controld
 usr/lib/ocf/resource.d/pacemaker/o2cb
 usr/lib/ocf/resource.d/pacemaker/remote
