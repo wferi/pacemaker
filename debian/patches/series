@@ -9,3 +9,4 @@ Fix-typo-Initalizing-Initializing.patch
 Drop-misleading-comment-from-config-set-a-does-the-e.patch
 Fix-typo-afer-after.patch
 The-DTD-RNG-and-XSL-files-are-not-executable.patch
+Create-CRM_CORE_DIR-during-installation.patch

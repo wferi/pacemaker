@@ -8,6 +8,7 @@ if [ "$1" = configure ]; then
     # keep this list in sync with that in the postrm
     for i in /var/lib/pacemaker/pengine \
              /var/lib/pacemaker/cib \
+             /var/lib/pacemaker/cores \
              /var/lib/pacemaker/blackbox; do
         if ! dpkg-statoverride --list "$i" >/dev/null 2>&1; then
             dpkg-statoverride --update --add hacluster haclient 750 "$i"
