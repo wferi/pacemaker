@@ -1,3 +1,31 @@
+pacemaker (1.1.14-2) unstable; urgency=medium
+
+  * [42577da] Promote resource-agents to Depends (Closes: #813009)
+  * [55ed163] Move the dummy RA script and its man page into pacemaker
+    (Closes: #813008)
+  * [5c89773] Freshen package descriptions, factor out common text
+  * [520288c] Run wrap-and-sort -ast on the package, add back comments
+  * [86fccce] Split out common part and agents from the pacemaker package
+  * [6ac6989] Move crm_attribute and crm_node into the pacemaker package
+  * [6ff66d1] Move attrd_updater and stonith_admin into pacemaker-cli-utils
+  * [ce91694] Create auth secret for pacemaker-remote
+  * [1186e73] Use HTTPS for Vcs-Browser
+  * [dd08977] New patches fixing typos
+  * [613eaab] New patch Drop-misleading-comment-from-config-set-a-does-
+    the-e.patch
+  * [e0e5d90] Update Standards-Version to 3.9.7 (no changes needed)
+  * [0c258fa] Make systemd support optional
+  * [e2022ea] Set libexecdir to /usr/lib
+  * [c9b3945] New patch Fix-typo-afer-after.patch
+  * [a53197e] Override breaks-without-version Lintian warning
+  * [c27b3b8] Explicitly delete the unwanted paths instead of ignoring the names
+    everywhere
+  * [d855aa0] Also move the default file into pacemaker-common
+  * [142edfa] New patch The-DTD-RNG-and-XSL-files-are-not-executable.patch
+  * [539a4e4] Add /var/lib/pacemaker/cores to the common package
+
+ -- Ferenc Wágner <wferi@niif.hu>  Thu, 25 Feb 2016 13:46:22 +0100
+
 pacemaker (1.1.14-1) unstable; urgency=medium
 
   * [4cae0b4] New upstream release candidate (1.1.14~rc4)
