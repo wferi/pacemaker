@@ -34,12 +34,15 @@ override_dh_auto_test:
 
 override_dh_install:
 	rm -r	debian/tmp/usr/share/pacemaker/tests \
-		debian/tmp/usr/lib/python2.7/dist-packages/cts
+		debian/tmp/usr/lib/python2.7/dist-packages/cts \
+		debian/tmp/usr/lib/*/lib*.la \
+		debian/tmp/usr/share/doc/pacemaker/COPYING \
+		debian/tmp/usr/share/doc/pacemaker/COPYING.LIB \
+		doc/api/html/*.md5
 	# in absence of systemd the service files aren't installed:
 	rm -f	debian/tmp/lib/systemd/system/crm_mon.service
 	chmod -x debian/tmp/usr/share/pacemaker/*
-	dh_install --fail-missing --exclude=.la --exclude=.md5 \
-		--exclude COPYING --exclude COPYING.LIB
+	dh_install --fail-missing
 	install -D -m 644 mcp/pacemaker.sysconfig debian/pacemaker/etc/default/pacemaker
 	debian/check_header_deps pacemaker
 
