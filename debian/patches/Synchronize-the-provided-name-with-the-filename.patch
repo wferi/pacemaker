@@ -6,14 +6,12 @@ The init script needs to have the same name as the thing it provides,
 and at the same time it needs to have the same name as the systemd
 service file, or else the /etc/init.d -> systemctl redirect won't work
 correctly. (As Christoph Berg put it very succintly.)
-
-Source /etc/default/pacemaker_remote if exists.
 ---
- lrmd/pacemaker_remote.in | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ lrmd/pacemaker_remote.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/lrmd/pacemaker_remote.in b/lrmd/pacemaker_remote.in
-index ba89087..8dc3f4a 100644
+index ba89087..fd2d7b2 100644
 --- a/lrmd/pacemaker_remote.in
 +++ b/lrmd/pacemaker_remote.in
 @@ -10,7 +10,7 @@
@@ -25,12 +23,3 @@ index ba89087..8dc3f4a 100644
  # Required-Start:	$network
  # Should-Start:		$syslog
  # Required-Stop:	$network
-@@ -66,7 +66,7 @@ fi
- 
- # deb based distros
- if [ -d @sysconfdir@/default ]; then
--	[ -f @sysconfdir@/default/pacemaker ] && . @sysconfdir@/default/pacemaker
-+	[ -f @sysconfdir@/default/pacemaker_remote ] && . @sysconfdir@/default/pacemaker_remote
- 	[ -z "$LOCK_FILE" ] && LOCK_FILE="@localstatedir@/lock/pacemaker_remote"
- fi
- 
