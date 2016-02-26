@@ -23,8 +23,10 @@ pacemaker (1.1.14-2) unstable; urgency=medium
   * [d855aa0] Also move the default file into pacemaker-common
   * [142edfa] New patch The-DTD-RNG-and-XSL-files-are-not-executable.patch
   * [539a4e4] Add /var/lib/pacemaker/cores to the common package
+  * [75f7f71] Let pacemaker_remoted use the common default file
+  * [69920b0] Auto-export the init script variables read from the config
 
- -- Ferenc Wágner <wferi@niif.hu>  Thu, 25 Feb 2016 13:46:22 +0100
+ -- Ferenc Wágner <wferi@niif.hu>  Fri, 26 Feb 2016 11:58:06 +0100
 
 pacemaker (1.1.14-1) unstable; urgency=medium
 
